@@ -1,21 +1,22 @@
-import { execSync } from "child_process";
-import { cpSync, rmSync, mkdirSync } from "fs";
+import { cpSync, rmSync, mkdirSync, existsSync } from "fs";
 
-console.log("Building frontend...");
-execSync("npm run build", { cwd: "frontend", stdio: "inherit" });
+// Merge pre-built frontend and admin into dist/
+// Both apps must already be built before this runs.
 
-console.log("Building admin...");
-execSync("npm run build", { cwd: "admin", stdio: "inherit" });
+if (!existsSync("frontend/dist") || !existsSync("admin/dist")) {
+  console.error("ERROR: frontend/dist or admin/dist not found. Build both apps first.");
+  process.exit(1);
+}
 
 console.log("Merging into dist/...");
 rmSync("dist", { recursive: true, force: true });
 mkdirSync("dist", { recursive: true });
 
-// Copy frontend build to dist/
+// Frontend → dist/
 cpSync("frontend/dist", "dist", { recursive: true });
 
-// Copy admin build to dist/admin/
+// Admin → dist/admin/
 mkdirSync("dist/admin", { recursive: true });
 cpSync("admin/dist", "dist/admin", { recursive: true });
 
-console.log("Done! dist/ is ready for Vercel.");
+console.log("Done! dist/ is ready.");

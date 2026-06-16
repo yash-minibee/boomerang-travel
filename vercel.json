@@ -1,10 +1,9 @@
 {
-  "buildCommand": "npm install --prefix frontend && npm install --prefix admin && node build.js",
+  "buildCommand": "cd frontend && npm install && npm run build && cd ../admin && npm install && npm run build && cd .. && node build.js",
   "outputDirectory": "dist",
-  "rewrites": [
-    { "source": "/admin",        "destination": "/admin/index.html" },
-    { "source": "/admin/",       "destination": "/admin/index.html" },
-    { "source": "/admin/:path*", "destination": "/admin/index.html" },
-    { "source": "/:path*",       "destination": "/index.html" }
+  "routes": [
+    { "handle": "filesystem" },
+    { "src": "/admin(/.*)?", "dest": "/admin/index.html" },
+    { "src": "/(.*)",        "dest": "/index.html" }
   ]
 }

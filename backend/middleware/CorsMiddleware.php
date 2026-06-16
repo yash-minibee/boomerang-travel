@@ -5,8 +5,9 @@ declare(strict_types=1);
 class CorsMiddleware
 {
     private static array $allowed = [
-        'https://boomerang-travel.vercel.app/',
-        'https://boomerang-travel.vercel.app/admin/',
+        'http://localhost:5173',       // Frontend dev
+        'http://localhost:5174',       // Admin dev
+        'https://boomerang-travel.vercel.app',  // Vercel production (both frontend & admin share same origin)
     ];
 
     public static function handle(): void
@@ -16,7 +17,7 @@ class CorsMiddleware
         if (in_array($origin, self::$allowed, true)) {
             header("Access-Control-Allow-Origin: {$origin}");
         } else {
-            header('Access-Control-Allow-Origin: https://boomerang-travel.vercel.app/');
+            header('Access-Control-Allow-Origin: https://boomerang-travel.vercel.app');
         }
 
         header('Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS');

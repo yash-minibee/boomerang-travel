@@ -1,6 +1,4 @@
-const BASE = (typeof import !== 'undefined' && typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_BASE)
-  ? import.meta.env.VITE_API_BASE
-  : '/backend/api/v1';
+const BASE = import.meta.env.VITE_API_BASE || '/backend/api/v1';
 
 function getToken() {
   return localStorage.getItem('token');

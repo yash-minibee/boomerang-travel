@@ -2,26 +2,41 @@
 // e.g. https://ldvevents.site/backend/api
 const BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000/backend/api';
 
-// Derive origin from BASE to build image URLs
-const ORIGIN = BASE.replace(/\/backend\/api\/?$/, '').replace(/\/api\/?$/, '');
+// Root URL for uploaded files.
+// VITE_UPLOADS_URL should point to wherever the backend/uploads folder is served from.
+// e.g.  https://ldvevents.site/backend/uploads  (production on Hostinger)
+//       http://localhost:8000/backend/uploads    (local dev)
+const UPLOADS_URL = (import.meta.env.VITE_UPLOADS_URL || 'http://localhost:8000/backend/uploads').replace(/\/$/, '');
 
 /**
- * Convert a relative image path returned by the API into a full URL.
- * Handles:
- *   /backend/uploads/packages/file.jpg  → https://ldvevents.site/backend/uploads/...
- *   uploads/packages/file.jpg           → https://ldvevents.site/backend/uploads/...
- *   https://any-absolute-url/...        → returned as-is
- *   http://localhost:8000/uploads/...   → rewritten to current origin (old DB records)
+ * Convert any image path stored in the DB into a full URL.
+ * DB may contain any of:
+ *   /backend/uploads/packages/file.jpg   (new relative format)
+ *   uploads/packages/file.jpg            (bare relative)
+ *   http://localhost:8000/uploads/...    (old absolute localhost)
+ *   https://any-cdn/...                  (external URL — pass through)
  */
 export function imageUrl(path) {
   if (!path) return '';
-  // Rewrite old absolute localhost URLs stored in the DB to use the current origin
-  if (path.startsWith('http://localhost') || path.startsWith('https://localhost')) {
-    path = path.replace(/^https?:\/\/localhost(:\d+)?/, '');
+
+  // Pass through real external URLs (not localhost)
+  if ((path.startsWith('http://') || path.startsWith('https://')) &&
+      !path.includes('localhost')) {
+    return path;
   }
-  if (path.startsWith('http://') || path.startsWith('https://')) return path;
-  if (path.startsWith('/')) return ORIGIN + path;
-  return ORIGIN + '/backend/' + path;
+
+  // Strip any absolute origin (localhost or otherwise) — keep only the path
+  path = path.replace(/^https?:\/\/[^/]+/, '');
+
+  // Normalise to just the uploads-relative part
+  // e.g. /backend/uploads/packages/file.jpg → packages/file.jpg
+  //      /uploads/packages/file.jpg         → packages/file.jpg
+  //      uploads/packages/file.jpg          → packages/file.jpg
+  path = path.replace(/^\/?backend\/uploads\//, '');
+  path = path.replace(/^\/?uploads\//, '');
+  path = path.replace(/^\//, '');
+
+  return `${UPLOADS_URL}/${path}`;
 }
 
 function getToken() {

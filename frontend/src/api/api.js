@@ -1,5 +1,5 @@
 // Base points to your hosting folder containing the /api/*.php files
-// e.g. https://krishivlimo.com.au/boomerang-backend/api
+// e.g. https://ldvevents.site/backend/api
 const BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000/backend/api';
 
 async function request(method, url, data = null) {

@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "cd frontend && npm install && npm run build && cd ../admin && npm install && npm run build && cd .. && node build.js",
+    "build": "npm install --prefix frontend && npx --prefix frontend vite build && npm install --prefix admin && npx --prefix admin vite build && node build.js",
     "dev:backend": "php -S localhost:8000 -t .",
     "dev:frontend": "npm run dev --prefix frontend",
     "dev:admin": "npm run dev --prefix admin",

@@ -7,6 +7,7 @@ import PackagesPage from "./pages/PackagesPage";
 import PackageDetailPage from "./pages/PackageDetailPage";
 import AboutPage from "./pages/AboutPage";
 import ContactPage from "./pages/ContactPage";
+import MicePage from "./pages/MicePage";
 
 const pageVariants = {
   initial: { opacity: 0, y: 10 },
@@ -25,6 +26,7 @@ function AnimatedRoutes() {
           <Route path="/packages/:slug" element={<PackageDetailPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/contact" element={<ContactPage />} />
+          <Route path="/mice" element={<MicePage />} />
         </Routes>
       </motion.div>
     </AnimatePresence>

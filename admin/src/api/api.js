@@ -2,6 +2,23 @@
 // e.g. https://ldvevents.site/backend/api
 const BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000/backend/api';
 
+// Derive origin from BASE to build image URLs
+const ORIGIN = BASE.replace(/\/backend\/api\/?$/, '').replace(/\/api\/?$/, '');
+
+/**
+ * Convert a relative image path returned by the API into a full URL.
+ * Handles:
+ *   /backend/uploads/packages/file.jpg  → https://ldvevents.site/backend/uploads/...
+ *   uploads/packages/file.jpg           → https://ldvevents.site/backend/uploads/...
+ *   https://any-absolute-url/...        → returned as-is
+ */
+export function imageUrl(path) {
+  if (!path) return '';
+  if (path.startsWith('http://') || path.startsWith('https://')) return path;
+  if (path.startsWith('/')) return ORIGIN + path;
+  return ORIGIN + '/backend/' + path;
+}
+
 function getToken() {
   return localStorage.getItem('token');
 }

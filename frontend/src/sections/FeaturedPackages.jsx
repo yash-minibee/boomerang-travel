@@ -2,14 +2,8 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Clock, Star, ArrowRight, MapPin } from "lucide-react";
-import { api } from "../api/api";
+import { api, imageUrl } from "../api/api";
 
-const API_URL = "http://localhost:8000";
-function resolveImg(url) {
-  if (!url) return null;
-  if (url.startsWith("http")) return url;
-  return `${API_URL}/${url.replace(/^\//, "")}`;
-}
 
 export default function FeaturedPackages() {
   const [packages, setPackages] = useState([]);
@@ -37,8 +31,8 @@ export default function FeaturedPackages() {
               viewport={{ once: true, margin: "-50px" }} transition={{ duration: 0.6 }}
               className="group bg-white rounded-3xl shadow-md hover:shadow-xl transition-all overflow-hidden flex flex-col lg:flex-row border border-gray-100">
               <div className="relative lg:w-2/5 h-64 lg:h-auto overflow-hidden bg-teal-50">
-                {resolveImg(pkg.cover_image) ? (
-                  <img src={resolveImg(pkg.cover_image)} alt={pkg.title}
+                {imageUrl(pkg.cover_image) ? (
+                  <img src={imageUrl(pkg.cover_image)} alt={pkg.title}
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
                 ) : (
                   <div className="w-full h-full bg-gradient-to-br from-teal-600 to-teal-800 flex items-center justify-center text-white text-4xl font-bold opacity-20">

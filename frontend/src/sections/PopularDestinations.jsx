@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { ArrowRight, MapPin } from "lucide-react";
-import { api } from "../api/api";
+import { api, imageUrl } from "../api/api";
 
 const containerVariants = { hidden: {}, visible: { transition: { staggerChildren: 0.1 } } };
 const cardVariants = { hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5 } } };
@@ -38,7 +38,7 @@ export default function PopularDestinations() {
               <Link to={`/packages?destination=${dest.region}`}>
                 <div className="relative rounded-3xl overflow-hidden group cursor-pointer h-64">
                   {dest.hero_image ? (
-                    <img src={dest.hero_image} alt={dest.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                    <img src={imageUrl(dest.hero_image)} alt={dest.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
                   ) : (
                     <div className="w-full h-full bg-gradient-to-br from-teal-600 to-teal-800" />
                   )}

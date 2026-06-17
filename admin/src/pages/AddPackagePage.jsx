@@ -4,7 +4,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Plus, X, ChevronDown, ChevronUp, Upload, Check, Utensils, Bus, Tag, Image as ImageIcon, Star } from "lucide-react";
 import PageHeader from "../components/ui/PageHeader";
 import { FormInput, FormSelect, FormTextarea } from "../components/ui/FormFields";
-import { packagesAPI, mediaAPI } from "../api/api";
+import { packagesAPI, mediaAPI, imageUrl } from "../api/api";
 
 const STEPS = ["Basic Info", "Gallery & Highlights", "Itinerary", "Hotels", "Inclusions & Policies"];
 const MEAL_OPTIONS = ["Breakfast", "Lunch", "Dinner", "Welcome Drink", "High Tea"];
@@ -415,7 +415,7 @@ export default function AddPackagePage() {
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
             {gallery.map((url, i) => (
               <div key={i} className="relative group rounded-2xl overflow-hidden aspect-video bg-gray-100">
-                <img src={url} alt={`Gallery ${i + 1}`} className="w-full h-full object-cover" />
+                <img src={imageUrl(url)} alt={`Gallery ${i + 1}`} className="w-full h-full object-cover" />
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all" />
                 {/* Cover badge */}
                 {i === 0 && (
@@ -595,7 +595,7 @@ export default function AddPackagePage() {
               <label className="text-sm font-semibold text-gray-700 block mb-2">Hotel Image</label>
               {hotel.imagePreview ? (
                 <div className="relative rounded-2xl overflow-hidden h-40 bg-gray-100">
-                  <img src={hotel.imagePreview} alt="Hotel preview" className="w-full h-full object-cover" />
+                <img src={imageUrl(hotel.imagePreview)} alt="Hotel preview" className="w-full h-full object-cover" />
                   <button type="button"
                     onClick={() => updateHotel(i, "imagePreview", "")}
                     className="absolute top-2 right-2 w-7 h-7 bg-black/50 hover:bg-red-500 text-white rounded-full flex items-center justify-center transition-colors">

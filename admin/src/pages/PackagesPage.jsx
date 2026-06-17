@@ -7,7 +7,7 @@ import SearchInput from "../components/ui/SearchInput";
 import StatusBadge from "../components/ui/StatusBadge";
 import DeleteModal from "../components/ui/DeleteModal";
 import Pagination from "../components/ui/Pagination";
-import { packagesAPI } from "../api/api";
+import { packagesAPI, imageUrl } from "../api/api";
 
 const destinations = ["All", "Europe", "Asia", "Americas", "Africa", "Islands"];
 const statuses = ["All", "active", "draft"];
@@ -98,7 +98,7 @@ export default function PackagesPage() {
                       <div className="w-14 h-10 rounded-xl overflow-hidden shrink-0 bg-teal-50">
                         {pkg.cover_image ? (
                           <img
-                            src={pkg.cover_image.startsWith("http") ? pkg.cover_image : `http://localhost:8000/${pkg.cover_image.replace(/^\//, "")}`}
+                            src={imageUrl(pkg.cover_image)}
                             alt={pkg.title}
                             className="w-full h-full object-cover"
                           />

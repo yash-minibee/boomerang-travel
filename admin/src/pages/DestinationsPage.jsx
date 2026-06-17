@@ -5,14 +5,8 @@ import { Plus, Edit, Trash2, MapPin, Package } from "lucide-react";
 import PageHeader from "../components/ui/PageHeader";
 import SearchInput from "../components/ui/SearchInput";
 import DeleteModal from "../components/ui/DeleteModal";
-import { destinationsAPI } from "../api/api";
+import { destinationsAPI, imageUrl } from "../api/api";
 
-const API_URL = "http://localhost:8000";
-function resolveImg(url) {
-  if (!url) return null;
-  if (url.startsWith("http")) return url;
-  return `${API_URL}/${url.replace(/^\//, "")}`;
-}
 
 export default function DestinationsPage() {
   const [destinations, setDestinations] = useState([]);
@@ -60,7 +54,7 @@ export default function DestinationsPage() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
           {destinations.map((dest, i) => {
-            const imgSrc = resolveImg(dest.hero_image);
+            const imgSrc = imageUrl(dest.hero_image);
             return (
               <motion.div key={dest.id}
                 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}

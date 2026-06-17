@@ -2,17 +2,11 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Clock, Star, Heart, ArrowRight, MapPin } from "lucide-react";
 import { useState } from "react";
-
-const API_URL = "http://localhost:8000";
-function resolveImg(url) {
-  if (!url) return null;
-  if (url.startsWith("http")) return url;
-  return `${API_URL}/${url.replace(/^\//, "")}`;
-}
+import { api, imageUrl } from "../api/api";
 
 export default function PackageCard({ pkg }) {
   const [wishlisted, setWishlisted] = useState(false);
-  const imgSrc = resolveImg(pkg.image || pkg.cover_image);
+  const imgSrc = imageUrl(pkg.image || pkg.cover_image);
 
   return (
     <motion.div whileHover={{ y: -6 }} transition={{ duration: 0.3 }}

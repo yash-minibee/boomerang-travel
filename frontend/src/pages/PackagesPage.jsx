@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { SlidersHorizontal, X } from "lucide-react";
 import PackageCard from "../components/PackageCard";
-import { api } from "../api/api";
+import { api, imageUrl } from "../api/api";
 
 const travelStyles = ["All", "Cultural", "Luxury", "Adventure", "Wellness", "Honeymoon", "Trekking"];
 const durationOptions = ["Any", "1-5 Days", "6-10 Days", "11-15 Days", "15+ Days"];
@@ -16,7 +16,7 @@ function mapPkg(pkg) {
     destinations: [pkg.destination_region ?? ""],
     days: parseInt(pkg.duration) || 0,
     style: [pkg.category],
-    image: pkg.cover_image ?? `https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=800&q=80`,
+    image: imageUrl(pkg.cover_image) || `https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=800&q=80`,
   };
 }
 

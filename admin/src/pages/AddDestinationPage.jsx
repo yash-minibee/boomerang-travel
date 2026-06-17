@@ -3,7 +3,7 @@ import { Upload, Plus, X } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import PageHeader from "../components/ui/PageHeader";
 import { FormInput, FormSelect, FormTextarea } from "../components/ui/FormFields";
-import { destinationsAPI, mediaAPI } from "../api/api";
+import { destinationsAPI, mediaAPI, imageUrl } from "../api/api";
 
 export default function AddDestinationPage() {
   const navigate = useNavigate();
@@ -128,7 +128,7 @@ export default function AddDestinationPage() {
             <label className="text-sm font-semibold text-gray-700 block mb-3">Hero Image</label>
             {heroImage && !heroImage.startsWith("data:") ? (
               <div className="relative rounded-2xl overflow-hidden h-48 mb-3 bg-gray-100">
-                <img src={heroImage} alt="Hero" className="w-full h-full object-cover" />
+                <img src={imageUrl(heroImage)} alt="Hero" className="w-full h-full object-cover" />
                 <button type="button" onClick={() => setHeroImage("")}
                   className="absolute top-2 right-2 w-7 h-7 bg-black/50 hover:bg-red-500 text-white rounded-full flex items-center justify-center">
                   <X className="w-3.5 h-3.5" />

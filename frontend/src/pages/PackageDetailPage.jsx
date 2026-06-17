@@ -7,15 +7,7 @@ import {
   Utensils, Activity, MessageCircle, ArrowRight
 } from "lucide-react";
 import PackageCard from "../components/PackageCard";
-import { api } from "../api/api";
-
-const API_URL = "http://localhost:8000";
-
-function resolveImg(url) {
-  if (!url) return null;
-  if (url.startsWith("http")) return url;
-  return `${API_URL}/${url.replace(/^\//, "")}`;
-}
+import { api, imageUrl } from "../api/api";
 
 function mapPkg(pkg) {
   return {
@@ -25,7 +17,7 @@ function mapPkg(pkg) {
     tag: pkg.tags?.[0] ?? null,
     destinations: [pkg.destination_region ?? ""],
     days: parseInt(pkg.duration) || 0,
-    image: resolveImg(pkg.cover_image),
+    image: imageUrl(pkg.cover_image),
   };
 }
 
@@ -92,7 +84,7 @@ export default function PackageDetailPage() {
 
   // Build gallery — resolve all URLs, fallback to cover image
   const gallery = (pkg.gallery?.length ? pkg.gallery : pkg.image ? [pkg.image] : [])
-    .map(resolveImg).filter(Boolean);
+    .map(imageUrl).filter(Boolean);
 
   // Only show policies that have content
   const policies = [
@@ -276,7 +268,7 @@ export default function PackageDetailPage() {
                 <h2 className="text-xl font-extrabold text-gray-900 mb-5">Hotel Stay</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                   {pkg.hotels.map((hotel, i) => {
-                    const hotelImg = resolveImg(hotel.image_url);
+                    const hotelImg = imageUrl(hotel.image_url);
                     return (
                       <div key={i} className="rounded-2xl overflow-hidden border border-gray-100 group hover:shadow-md transition-shadow">
                         <div className="h-40 overflow-hidden bg-teal-50">

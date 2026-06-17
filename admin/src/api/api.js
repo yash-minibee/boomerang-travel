@@ -1,10 +1,12 @@
-const BASE = import.meta.env.VITE_API_BASE || '/backend/api/v1';
+// Base points to your hosting folder containing the /api/*.php files
+// e.g. https://krishivlimo.com.au/boomerang-backend/api
+const BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080/backend/api';
 
 function getToken() {
   return localStorage.getItem('token');
 }
 
-async function request(method, path, data = null, isFormData = false) {
+async function request(method, url, data = null, isFormData = false) {
   const headers = {};
   const token = getToken();
   if (token) headers['Authorization'] = `Bearer ${token}`;
@@ -13,7 +15,7 @@ async function request(method, path, data = null, isFormData = false) {
   const options = { method, headers };
   if (data) options.body = isFormData ? data : JSON.stringify(data);
 
-  const res = await fetch(`${BASE}${path}`, options);
+  const res = await fetch(url, options);
   const json = await res.json();
 
   if (!res.ok) {
@@ -25,87 +27,102 @@ async function request(method, path, data = null, isFormData = false) {
   return json;
 }
 
-const get = (path) => request('GET', path);
-const post = (path, data, isForm) => request('POST', path, data, isForm);
-const put = (path, data) => request('PUT', path, data);
-const patch = (path, data) => request('PATCH', path, data);
-const del = (path) => request('DELETE', path);
+const get  = (file, params = {}) => {
+  const qs = new URLSearchParams(params).toString();
+  return request('GET', `${BASE}/${file}${qs ? '?' + qs : ''}`);
+};
+const post  = (file, params, data, isForm) => {
+  const qs = new URLSearchParams(params).toString();
+  return request('POST', `${BASE}/${file}${qs ? '?' + qs : ''}`, data, isForm);
+};
+const put   = (file, params, data) => {
+  const qs = new URLSearchParams(params).toString();
+  return request('PUT', `${BASE}/${file}${qs ? '?' + qs : ''}`, data);
+};
+const patch = (file, params, data) => {
+  const qs = new URLSearchParams(params).toString();
+  return request('PATCH', `${BASE}/${file}${qs ? '?' + qs : ''}`, data);
+};
+const del   = (file, params) => {
+  const qs = new URLSearchParams(params).toString();
+  return request('DELETE', `${BASE}/${file}${qs ? '?' + qs : ''}`);
+};
 
-// Auth
+// ── Auth ────────────────────────────────────────────────────────────────────
 export const authAPI = {
-  login: (body) => post('/auth/login', body),
-  logout: () => post('/auth/logout'),
-  me: () => get('/auth/me'),
+  login:  (body)  => post('auth.php', { action: 'login' }, body),
+  logout: ()      => post('auth.php', { action: 'logout' }),
+  me:     ()      => get('auth.php',  { action: 'me' }),
 };
 
-// Packages
+// ── Packages ────────────────────────────────────────────────────────────────
 export const packagesAPI = {
-  list: (params = {}) => get('/packages?' + new URLSearchParams(params)),
-  get: (slug) => get(`/packages/${slug}`),
-  getById: (id) => get(`/packages/id/${id}`),
-  create: (data) => post('/packages', data),
-  update: (id, data) => put(`/packages/${id}`, data),
-  delete: (id) => del(`/packages/${id}`),
-  toggleFeatured: (id) => patch(`/packages/${id}/featured`),
-  getItinerary: (id) => get(`/packages/${id}/itinerary`),
-  saveItinerary: (id, days) => post(`/packages/${id}/itinerary`, { days }),
-  getHotels: (id) => get(`/packages/${id}/hotels`),
-  saveHotels: (id, hotels) => post(`/packages/${id}/hotels`, { hotels }),
+  list:          (params = {})    => get('packages.php', params),
+  getById:       (id)             => get('packages.php', { id }),
+  get:           (slug)           => get('packages.php', { slug }),
+  create:        (data)           => post('packages.php', {}, data),
+  update:        (id, data)       => put('packages.php', { id }, data),
+  delete:        (id)             => del('packages.php', { id }),
+  toggleFeatured:(id)             => patch('packages.php', { id, action: 'featured' }),
+  getItinerary:  (id)             => get('itinerary.php', { package_id: id }),
+  saveItinerary: (id, days)       => post('itinerary.php', { package_id: id }, { days }),
+  getHotels:     (id)             => get('hotels.php', { package_id: id }),
+  saveHotels:    (id, hotels)     => post('hotels.php', { package_id: id }, { hotels }),
 };
 
-// Destinations
+// ── Destinations ────────────────────────────────────────────────────────────
 export const destinationsAPI = {
-  list: (params = {}) => get('/destinations?' + new URLSearchParams(params)),
-  get: (id) => get(`/destinations/${id}`),
-  create: (data) => post('/destinations', data),
-  update: (id, data) => put(`/destinations/${id}`, data),
-  delete: (id) => del(`/destinations/${id}`),
+  list:   (params = {}) => get('destinations.php', params),
+  get:    (id)          => get('destinations.php', { id }),
+  create: (data)        => post('destinations.php', {}, data),
+  update: (id, data)    => put('destinations.php', { id }, data),
+  delete: (id)          => del('destinations.php', { id }),
 };
 
-// Inquiries
+// ── Inquiries ───────────────────────────────────────────────────────────────
 export const inquiriesAPI = {
-  list: (params = {}) => get('/inquiries?' + new URLSearchParams(params)),
-  get: (id) => get(`/inquiries/${id}`),
-  updateStatus: (id, status) => patch(`/inquiries/${id}/status`, { status }),
-  submit: (data) => post('/inquiries', data),
+  list:         (params = {}) => get('inquiries.php', params),
+  get:          (id)          => get('inquiries.php', { id }),
+  submit:       (data)        => post('inquiries.php', {}, data),
+  updateStatus: (id, status)  => patch('inquiries.php', { id, action: 'status' }, { status }),
 };
 
-// Customers
+// ── Customers ────────────────────────────────────────────────────────────────
 export const customersAPI = {
-  list: (params = {}) => get('/customers?' + new URLSearchParams(params)),
-  get: (id) => get(`/customers/${id}`),
+  list: (params = {}) => get('customers.php', params),
+  get:  (id)          => get('customers.php', { id }),
 };
 
-// Testimonials
+// ── Testimonials ─────────────────────────────────────────────────────────────
 export const testimonialsAPI = {
-  listPublic: () => get('/testimonials'),
-  listAll: () => get('/testimonials/all'),
-  submit: (data) => post('/testimonials', data),
-  updateStatus: (id, status) => patch(`/testimonials/${id}/status`, { status }),
-  delete: (id) => del(`/testimonials/${id}`),
+  listPublic:   ()             => get('testimonials.php'),
+  listAll:      ()             => get('testimonials.php', { scope: 'all' }),
+  submit:       (data)         => post('testimonials.php', {}, data),
+  updateStatus: (id, status)   => patch('testimonials.php', { id, action: 'status' }, { status }),
+  delete:       (id)           => del('testimonials.php', { id }),
 };
 
-// Media
+// ── Media ────────────────────────────────────────────────────────────────────
 export const mediaAPI = {
-  list: () => get('/media'),
-  upload: (formData) => post('/media/upload', formData, true),
-  delete: (id) => del(`/media/${id}`),
+  list:   ()         => get('media.php'),
+  upload: (formData) => post('media.php', {}, formData, true),
+  delete: (id)       => del('media.php', { id }),
 };
 
-// Content
+// ── Content ──────────────────────────────────────────────────────────────────
 export const contentAPI = {
-  get: (page) => get(`/content/${page}`),
-  update: (page, data) => put(`/content/${page}`, data),
+  get:    (page)       => get('content.php', { page }),
+  update: (page, data) => put('content.php', { page }, data),
 };
 
-// Settings
+// ── Settings ──────────────────────────────────────────────────────────────────
 export const settingsAPI = {
-  get: () => get('/settings'),
-  update: (data) => put('/settings', data),
+  get:    ()     => get('settings.php'),
+  update: (data) => put('settings.php', {}, data),
 };
 
-// Dashboard
+// ── Dashboard ─────────────────────────────────────────────────────────────────
 export const dashboardAPI = {
-  stats: () => get('/dashboard/stats'),
-  revenue: () => get('/dashboard/revenue'),
+  stats:   () => get('dashboard.php'),
+  revenue: () => get('dashboard.php', { view: 'revenue' }),
 };

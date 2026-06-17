@@ -1,356 +1,357 @@
-# Boomerang Global Travel — API Reference
+# Boomerang Travel — API Reference
 
-Base URL: `http://localhost:8000/api/v1`
+All endpoints live in the `/api/` folder. Call them directly by filename.
 
-All responses follow this envelope:
-```json
-{ "success": true, "data": {}, "message": "OK", "pagination": {} }
+**Base URL (production)**
 ```
+https://krishivlimo.com.au/boomerang-backend/api
+```
+
+**Base URL (local dev)**
+```
+http://localhost/boomerang-travel/backend/api
+```
+
+**Request format:** `Content-Type: application/json`  
+**Auth header (protected routes):** `Authorization: Bearer <token>`
 
 ---
 
-## Auth
+## Response envelope
 
-### POST /auth/login
-Public. Rate limited to 10 requests/60s per IP.
+Every response follows this shape:
 
-**Body:**
-```json
-{ "email": "admin@boomerang.com", "password": "admin123" }
-```
-**Response:**
-```json
-{ "success": true, "data": { "token": "eyJ...", "user": { "id": 1, "name": "Aryan Kapoor", "email": "admin@boomerang.com", "role": "super_admin" } } }
-```
-
-### POST /auth/logout
-Protected.
-
-**Headers:** `Authorization: Bearer <token>`
-
-### GET /auth/me
-Protected. Returns current admin user.
-
----
-
-## Packages
-
-### GET /packages
-Public. Filters: `search`, `destination`, `status`, `category`, `featured`, `page`, `limit`, `sort`, `order`
-
-**Response:**
-```json
-{ "success": true, "data": [...], "pagination": { "page": 1, "limit": 10, "total": 6, "total_pages": 1 } }
-```
-
-### GET /packages/:slug
-Public. Returns full package with itinerary and hotels.
-
-**Response:**
-```json
-{ "success": true, "data": { "id": 1, "title": "European Grand Tour", "itinerary": [...], "hotels": [...] } }
-```
-
-### POST /packages
-Admin protected.
-
-**Body:**
 ```json
 {
-  "title": "New Package",
-  "starting_price": 1999,
-  "category": "Cultural",
-  "destination_region": "Europe",
-  "duration": "10 Days / 9 Nights",
-  "status": "draft",
-  "tags": ["Popular"],
-  "highlights": ["Eiffel Tower"],
-  "inclusions": ["Breakfast"],
-  "exclusions": ["Flights"]
+  "success": true,
+  "message": "OK",
+  "data": {},
+  "pagination": {}
 }
 ```
 
-### PUT /packages/:id
-Admin protected. Same body as POST (partial update supported).
-
-### DELETE /packages/:id
-Admin protected. Soft delete — sets `deleted_at`.
-
-### PATCH /packages/:id/featured
-Admin protected. Toggles featured status.
+On error:
+```json
+{
+  "success": false,
+  "message": "Error description",
+  "errors": {}
+}
+```
 
 ---
 
-## Itinerary
+## Auth — `auth.php`
 
-### GET /packages/:id/itinerary
-Public.
+| Method | Query | Auth | Description |
+|--------|-------|------|-------------|
+| POST | `?action=login` | — | Login and receive JWT token |
+| POST | `?action=logout` | ✓ | Invalidate session |
+| GET | `?action=me` | ✓ | Get current logged-in user |
 
-### POST /packages/:id/itinerary
-Admin protected. Bulk replaces all days.
+**Login request body:**
+```json
+{ "email": "admin@example.com", "password": "secret" }
+```
 
-**Body:**
+**Login response data:**
+```json
+{ "token": "eyJ...", "user": { "id": 1, "email": "...", "role": "admin" } }
+```
+
+---
+
+## Packages — `packages.php`
+
+| Method | Query | Auth | Description |
+|--------|-------|------|-------------|
+| GET | _(none)_ | — | List all packages (paginated) |
+| GET | `?id=5` | — | Get package by ID (includes itinerary + hotels) |
+| GET | `?slug=bali-escape` | — | Get package by slug (includes itinerary + hotels) |
+| POST | _(none)_ | ✓ | Create package |
+| PUT | `?id=5` | ✓ | Update package |
+| DELETE | `?id=5` | ✓ | Soft-delete package |
+| PATCH | `?id=5&action=featured` | ✓ | Toggle featured status |
+
+**List query filters** (append to GET with no id/slug):
+```
+?search=bali&destination=1&status=active&category=beach&featured=1&sort=created_at&order=desc&page=1&limit=10
+```
+
+**Create / Update body fields:**
+```json
+{
+  "title": "Bali Escape",
+  "slug": "bali-escape",
+  "description": "...",
+  "starting_price": 1200,
+  "duration_days": 7,
+  "destination_id": 1,
+  "category": "beach",
+  "status": "active",
+  "featured": 0,
+  "cover_image": "uploads/packages/abc.jpg"
+}
+```
+
+---
+
+## Itinerary — `itinerary.php`
+
+| Method | Query | Auth | Description |
+|--------|-------|------|-------------|
+| GET | `?package_id=5` | — | Get all itinerary days for a package |
+| POST | `?package_id=5` | ✓ | Bulk replace itinerary days for a package |
+| DELETE | `?id=3` | ✓ | Delete a single itinerary day |
+
+**Bulk save body:**
 ```json
 {
   "days": [
-    { "day_number": 1, "title": "Arrival in Rome", "city": "Rome", "description": "...", "meals": ["Breakfast", "Dinner"], "transport": ["Flight"] },
-    { "day_number": 2, "title": "Vatican Tour", "city": "Rome", "description": "...", "meals": ["Breakfast"], "transport": ["Bus"] }
+    { "day_number": 1, "title": "Arrival", "description": "..." },
+    { "day_number": 2, "title": "City Tour", "description": "..." }
   ]
 }
 ```
 
-### DELETE /itinerary/:id
-Admin protected.
-
 ---
 
-## Hotels
+## Hotels — `hotels.php`
 
-### GET /packages/:id/hotels
-Public.
+| Method | Query | Auth | Description |
+|--------|-------|------|-------------|
+| GET | `?package_id=5` | — | Get all hotels for a package |
+| POST | `?package_id=5` | ✓ | Bulk replace hotels for a package |
+| DELETE | `?id=3` | ✓ | Delete a single hotel |
 
-### POST /packages/:id/hotels
-Admin protected. Bulk replaces all hotels.
-
-**Body:**
+**Bulk save body:**
 ```json
 {
   "hotels": [
-    { "name": "Hotel de Russie", "city": "Rome", "star_rating": 5, "image_url": "https://...", "amenities": ["Spa", "Pool"] }
+    { "name": "Alaya Resort", "stars": 5, "location": "Ubud", "image": "..." }
   ]
 }
 ```
 
-### DELETE /hotels/:id
-Admin protected.
-
 ---
 
-## Destinations
+## Destinations — `destinations.php`
 
-### GET /destinations
-Public. Filters: `search`, `region`, `featured`, `page`, `limit`
+| Method | Query | Auth | Description |
+|--------|-------|------|-------------|
+| GET | _(none)_ | — | List all destinations (paginated) |
+| GET | `?id=5` | — | Get destination by ID |
+| POST | _(none)_ | ✓ | Create destination |
+| PUT | `?id=5` | ✓ | Update destination |
+| DELETE | `?id=5` | ✓ | Soft-delete destination |
 
-### GET /destinations/:id
-Public.
-
-### POST /destinations
-Admin protected.
-
-**Body:**
-```json
-{ "name": "Santorini", "country": "Greece", "region": "Europe", "description": "...", "featured": 1 }
+**List query filters:**
+```
+?search=bali&region=asia&featured=1&page=1&limit=10
 ```
 
-### PUT /destinations/:id
-Admin protected.
-
-### DELETE /destinations/:id
-Admin protected. Soft delete.
-
----
-
-## Inquiries
-
-### POST /inquiries
-Public. Creates inquiry and auto-creates customer record.
-
-**Body:**
+**Create / Update body fields:**
 ```json
 {
-  "customer_name": "Priya Sharma",
-  "customer_email": "priya@email.com",
-  "customer_phone": "+91 98765 43210",
-  "package_name": "Bali Bliss Retreat",
-  "travel_date": "2025-09-15",
-  "travellers": 2,
-  "budget_range": "$1,000–$2,000",
-  "message": "Looking for a honeymoon package.",
-  "type": "package"
+  "name": "Bali",
+  "region": "Asia",
+  "description": "...",
+  "image": "uploads/destinations/bali.jpg",
+  "featured": 1
 }
 ```
 
-### GET /inquiries
-Admin protected. Filters: `status`, `type`, `search`, `page`, `limit`
+---
 
-### GET /inquiries/:id
-Admin protected.
+## Inquiries — `inquiries.php`
 
-### PATCH /inquiries/:id/status
-Admin protected.
+| Method | Query | Auth | Description |
+|--------|-------|------|-------------|
+| POST | _(none)_ | — | Submit an inquiry (public) |
+| GET | _(none)_ | ✓ | List all inquiries (paginated) |
+| GET | `?id=5` | ✓ | Get inquiry by ID |
+| PATCH | `?id=5&action=status` | ✓ | Update inquiry status |
 
-**Body:**
+**Submit body:**
+```json
+{
+  "customer_name": "John Doe",
+  "customer_email": "john@example.com",
+  "customer_phone": "+61400000000",
+  "package_id": 5,
+  "message": "I'd like more info...",
+  "travel_date": "2026-09-01",
+  "num_travelers": 2
+}
+```
+
+**Update status body:**
 ```json
 { "status": "Contacted" }
 ```
-Valid values: `New`, `Contacted`, `Proposal Sent`, `Confirmed`, `Closed`
+Allowed values: `New` · `Contacted` · `Proposal Sent` · `Confirmed` · `Closed`
+
+**List query filters:**
+```
+?status=New&type=package&search=john&page=1&limit=10
+```
 
 ---
 
-## Customers
+## Customers — `customers.php`
 
-### GET /customers
-Admin protected. Filters: `search`, `page`, `limit`
+| Method | Query | Auth | Description |
+|--------|-------|------|-------------|
+| GET | _(none)_ | ✓ | List all customers (paginated) |
+| GET | `?id=5` | ✓ | Get customer by ID |
 
-### GET /customers/:id
-Admin protected.
+**List query filters:**
+```
+?search=john&page=1&limit=10
+```
+
+> Customers are auto-created when an inquiry is submitted.
 
 ---
 
-## Testimonials
+## Testimonials — `testimonials.php`
 
-### GET /testimonials
-Public. Returns approved testimonials only.
+| Method | Query | Auth | Description |
+|--------|-------|------|-------------|
+| GET | _(none)_ | — | List approved testimonials (public) |
+| GET | `?scope=all` | ✓ | List all testimonials (admin) |
+| POST | _(none)_ | — | Submit a testimonial (public) |
+| PATCH | `?id=5&action=status` | ✓ | Update testimonial status |
+| DELETE | `?id=5` | ✓ | Delete testimonial |
 
-### GET /testimonials/all
-Admin protected. Returns all testimonials.
-
-### POST /testimonials
-Public.
-
-**Body:**
+**Submit body:**
 ```json
 {
-  "customer_name": "James Chen",
-  "customer_location": "Singapore",
+  "customer_name": "Jane Smith",
+  "review_text": "Amazing trip, highly recommend!",
   "rating": 5,
-  "package_name": "Japan Cherry Blossom Trail",
-  "review_text": "Absolutely incredible experience!"
+  "package_id": 3
 }
 ```
 
-### PATCH /testimonials/:id/status
-Admin protected.
-
-**Body:**
+**Update status body:**
 ```json
 { "status": "Approved" }
 ```
-Valid values: `Pending`, `Approved`, `Rejected`
-
-### DELETE /testimonials/:id
-Admin protected.
+Allowed values: `Pending` · `Approved` · `Rejected`
 
 ---
 
-## Media
+## Media — `media.php`
 
-### GET /media
-Admin protected. Returns all uploaded files with URLs.
+| Method | Query | Auth | Description |
+|--------|-------|------|-------------|
+| GET | _(none)_ | ✓ | List all uploaded media |
+| POST | _(none)_ | ✓ | Upload an image file |
+| DELETE | `?id=5` | ✓ | Delete media record + file |
 
-### POST /media/upload
-Admin protected. `multipart/form-data`
+**Upload:** `multipart/form-data`
+```
+file   → image file (jpg, png, webp — max 5MB)
+type   → packages | hotels | destinations | media  (optional, defaults to "media")
+```
 
-**Fields:**
-- `file` — image file (jpg/png/webp, max 5MB)
-- `type` — folder: `packages`, `hotels`, `destinations`, or `media`
-
-**Response:**
+**Upload response data:**
 ```json
 {
-  "success": true,
-  "data": {
-    "id": 1,
-    "filename": "abc123_1234567890.jpg",
-    "file_path": "uploads/media/abc123_1234567890.jpg",
-    "url": "http://localhost:8000/uploads/media/abc123_1234567890.jpg"
-  }
+  "id": 12,
+  "filename": "abc123.jpg",
+  "file_path": "uploads/packages/abc123.jpg",
+  "url": "https://krishivlimo.com.au/boomerang-backend/uploads/packages/abc123.jpg",
+  "mime_type": "image/jpeg",
+  "file_size": 204800
 }
 ```
 
-### DELETE /media/:id
-Admin protected. Deletes file from disk and database.
-
 ---
 
-## CMS Content
+## Content (CMS) — `content.php`
 
-### GET /content/:page
-Public + Admin. Pages: `home`, `about`, `contact`
+| Method | Query | Auth | Description |
+|--------|-------|------|-------------|
+| GET | `?page=home` | — | Get page content blocks |
+| PUT | `?page=home` | ✓ | Update page content blocks |
 
-**Response:**
-```json
-{ "success": true, "data": { "hero_title": "The World Awaits", "hero_subtitle": "..." } }
-```
+Allowed page values: `home` · `about` · `contact`
 
-### PUT /content/:page
-Admin protected.
-
-**Body:**
-```json
-{ "hero_title": "New Hero Title", "hero_subtitle": "Updated subtitle text" }
-```
-
----
-
-## Settings
-
-### GET /settings
-Admin protected.
-
-**Response:**
-```json
-{ "success": true, "data": { "company_name": "Boomerang Global Travel", "phone": "+91 98765 43210" } }
-```
-
-### PUT /settings
-Admin protected.
-
-**Body:**
-```json
-{ "company_name": "Boomerang Travel", "whatsapp_number": "919876543210" }
-```
-
----
-
-## Dashboard
-
-### GET /dashboard/stats
-Admin protected.
-
-**Response:**
+**Update body** (key-value pairs of content blocks):
 ```json
 {
-  "success": true,
-  "data": {
-    "total_packages": 6,
-    "active_packages": 6,
-    "total_destinations": 8,
-    "total_inquiries": 6,
-    "new_inquiries": 2,
-    "total_customers": 6,
-    "total_testimonials": 4,
-    "pending_testimonials": 2,
-    "monthly_inquiries": [{ "month": "2025-06", "count": 6 }]
-  }
+  "hero_title": "Discover the World",
+  "hero_subtitle": "Unforgettable journeys await",
+  "about_text": "We are a boutique travel agency..."
 }
 ```
 
-### GET /dashboard/revenue
-Admin protected. Last 6 months monthly data.
+---
 
-**Response:**
+## Settings — `settings.php`
+
+| Method | Query | Auth | Description |
+|--------|-------|------|-------------|
+| GET | _(none)_ | ✓ | Get all site settings |
+| PUT | _(none)_ | ✓ | Update site settings |
+
+**Update body** (key-value pairs):
 ```json
 {
-  "success": true,
-  "data": [
-    { "month": "2025-01", "inquiries": 48, "confirmed": 16, "revenue": 52784.00 }
+  "site_name": "Boomerang Travel",
+  "contact_email": "hello@example.com",
+  "contact_phone": "+61400000000",
+  "social_facebook": "https://facebook.com/...",
+  "social_instagram": "https://instagram.com/..."
+}
+```
+
+---
+
+## Dashboard — `dashboard.php`
+
+| Method | Query | Auth | Description |
+|--------|-------|------|-------------|
+| GET | _(none)_ | ✓ | Summary stats |
+| GET | `?view=revenue` | ✓ | Monthly revenue + inquiry chart |
+
+**Stats response data:**
+```json
+{
+  "total_packages": 24,
+  "active_packages": 18,
+  "total_destinations": 12,
+  "total_inquiries": 340,
+  "new_inquiries": 15,
+  "total_customers": 210,
+  "total_testimonials": 48,
+  "pending_testimonials": 3,
+  "monthly_inquiries": [
+    { "month": "2026-01", "count": 42 }
   ]
 }
 ```
 
+**Revenue response data:**
+```json
+[
+  { "month": "2026-01", "inquiries": 42, "confirmed": 18, "revenue": 21600.00 }
+]
+```
+
 ---
 
-## HTTP Status Codes
+## Error codes
 
-| Code | Meaning              |
-|------|----------------------|
-| 200  | OK                   |
-| 201  | Created              |
-| 400  | Bad Request          |
-| 401  | Unauthorized         |
-| 403  | Forbidden            |
-| 404  | Not Found            |
-| 422  | Unprocessable Entity |
-| 429  | Too Many Requests    |
-| 500  | Server Error         |
+| Code | Meaning |
+|------|---------|
+| 400 | Bad request / missing body |
+| 401 | Missing or invalid JWT token |
+| 403 | Forbidden |
+| 404 | Resource not found |
+| 405 | Method not allowed for this endpoint |
+| 422 | Validation failed (see `errors` object) |
+| 429 | Too many requests (rate limit) |
+| 500 | Server error |

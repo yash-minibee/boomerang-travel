@@ -1,3 +1,5 @@
 @echo off
-echo Starting Boomerang API on http://localhost:8000
-php -S localhost:8000 router.php
+echo Starting PHP dev server on http://localhost:8080
+echo API endpoints: http://localhost:8080/api/packages.php etc.
+echo.
+php -S localhost:8080 -t "%~dp0"

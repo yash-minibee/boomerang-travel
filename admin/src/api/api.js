@@ -11,9 +11,14 @@ const ORIGIN = BASE.replace(/\/backend\/api\/?$/, '').replace(/\/api\/?$/, '');
  *   /backend/uploads/packages/file.jpg  → https://ldvevents.site/backend/uploads/...
  *   uploads/packages/file.jpg           → https://ldvevents.site/backend/uploads/...
  *   https://any-absolute-url/...        → returned as-is
+ *   http://localhost:8000/uploads/...   → rewritten to current origin (old DB records)
  */
 export function imageUrl(path) {
   if (!path) return '';
+  // Rewrite old absolute localhost URLs stored in the DB to use the current origin
+  if (path.startsWith('http://localhost') || path.startsWith('https://localhost')) {
+    path = path.replace(/^https?:\/\/localhost(:\d+)?/, '');
+  }
   if (path.startsWith('http://') || path.startsWith('https://')) return path;
   if (path.startsWith('/')) return ORIGIN + path;
   return ORIGIN + '/backend/' + path;

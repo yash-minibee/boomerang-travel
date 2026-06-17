@@ -27,7 +27,7 @@ export default function PackagesPage() {
   const [destination, setDestination] = useState("All");
   const [style, setStyle] = useState("All");
   const [duration, setDuration] = useState("Any");
-  const [budget, setBudget] = useState(5000);
+  const [budget, setBudget] = useState(10000);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -81,8 +81,8 @@ export default function PackagesPage() {
       </div>
       <div>
         <h3 className="font-bold text-gray-800 text-sm mb-3">Budget: <span className="text-amber-600 font-bold">${budget.toLocaleString()}</span></h3>
-        <input type="range" min={500} max={5000} step={100} value={budget} onChange={e => setBudget(Number(e.target.value))} className="w-full accent-amber-500" />
-        <div className="flex justify-between text-xs text-gray-400 mt-1"><span>$500</span><span>$5,000+</span></div>
+        <input type="range" min={500} max={10000} step={500} value={budget} onChange={e => setBudget(Number(e.target.value))} className="w-full accent-amber-500" />
+        <div className="flex justify-between text-xs text-gray-400 mt-1"><span>$500</span><span>$10,000+</span></div>
       </div>
       <div>
         <h3 className="font-bold text-gray-800 text-sm mb-3">Duration</h3>
@@ -106,7 +106,7 @@ export default function PackagesPage() {
           ))}
         </div>
       </div>
-      <button onClick={() => { setSearch(""); setDestination("All"); setStyle("All"); setDuration("Any"); setBudget(5000); }}
+      <button onClick={() => { setSearch(""); setDestination("All"); setStyle("All"); setDuration("Any"); setBudget(10000); }}
         className="w-full text-sm text-red-500 border border-red-200 hover:bg-red-50 py-2.5 rounded-xl transition-colors">
         Clear All Filters
       </button>

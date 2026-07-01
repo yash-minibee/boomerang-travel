@@ -2,12 +2,12 @@
 echo Starting all dev servers...
 echo.
 
-start "PHP Backend :8080" cmd /k "php -S localhost:8080"
+start "PHP Backend :8000" cmd /k "php -S localhost:8000"
 start "Frontend :5173"    cmd /k "cd frontend && npm run dev"
 start "Admin :5174"       cmd /k "cd admin && npm run dev"
 
 echo.
-echo PHP Backend  → http://localhost:8080/backend/api/packages.php
+echo PHP Backend  → http://localhost:8000/backend/api/packages.php
 echo Frontend     → http://localhost:5173
 echo Admin        → http://localhost:5174
 echo.

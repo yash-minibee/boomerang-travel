@@ -38,8 +38,8 @@ class TestimonialModel
     public function create(array $data): int
     {
         $stmt = $this->db->prepare(
-            'INSERT INTO testimonials (customer_name, customer_location, avatar_url, rating, package_name, review_text)
-             VALUES (?, ?, ?, ?, ?, ?)'
+            'INSERT INTO testimonials (customer_name, customer_location, avatar_url, rating, package_name, review_text, status)
+             VALUES (?, ?, ?, ?, ?, ?, ?)'
         );
         $stmt->execute([
             $data['customer_name'],
@@ -48,6 +48,7 @@ class TestimonialModel
             $data['rating']            ?? 5,
             $data['package_name']      ?? null,
             $data['review_text'],
+            $data['status']            ?? 'Pending',
         ]);
         return (int) $this->db->lastInsertId();
     }
@@ -56,6 +57,30 @@ class TestimonialModel
     {
         $stmt = $this->db->prepare('UPDATE testimonials SET status = ? WHERE id = ?');
         $stmt->execute([$status, $id]);
+        return $stmt->rowCount() > 0;
+    }
+
+    public function update(int $id, array $data): bool
+    {
+        $stmt = $this->db->prepare(
+            'UPDATE testimonials
+             SET customer_name = ?,
+                 customer_location = ?,
+                 rating = ?,
+                 package_name = ?,
+                 review_text = ?,
+                 status = ?
+             WHERE id = ?'
+        );
+        $stmt->execute([
+            $data['customer_name'],
+            $data['customer_location'] ?? null,
+            $data['rating']            ?? 5,
+            $data['package_name']      ?? null,
+            $data['review_text'],
+            $data['status']            ?? 'Pending',
+            $id
+        ]);
         return $stmt->rowCount() > 0;
     }
 

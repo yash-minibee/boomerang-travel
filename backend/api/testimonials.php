@@ -17,6 +17,7 @@ match (true) {
     $method === 'GET'    && $id === null && $scope === 'all'      => $ctrl->indexAll(),
     $method === 'GET'    && $id === null                          => $ctrl->index(),
     $method === 'POST'   && $id === null                          => $ctrl->store($body),
+    $method === 'PUT'    && $id !== null                          => $ctrl->update($id, $body),
     $method === 'PATCH'  && $id !== null && $action === 'status'  => $ctrl->updateStatus($id, $body),
     $method === 'DELETE' && $id !== null                          => $ctrl->destroy($id),
     default => methodNotAllowed(),

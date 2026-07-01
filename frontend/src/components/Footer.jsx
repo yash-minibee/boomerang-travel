@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { Mail, Phone, MapPin } from "lucide-react";
+import { useSettings } from "../context/SettingsContext";
 
 const SocialIcon = ({ href, children }) => (
   <a href={href} className="w-9 h-9 rounded-full bg-teal-800 hover:bg-amber-500 flex items-center justify-center transition-colors">
@@ -8,6 +9,7 @@ const SocialIcon = ({ href, children }) => (
 );
 
 export default function Footer() {
+  const { settings } = useSettings();
   return (
     <footer className="bg-teal-950 text-gray-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
@@ -19,10 +21,10 @@ export default function Footer() {
             Curating extraordinary travel experiences across the globe. Every journey tells a story — let us write yours.
           </p>
           <div className="flex gap-3 pt-1">
-            <SocialIcon href="#"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></SocialIcon>
-            <SocialIcon href="#"><rect x="2" y="2" width="20" height="20" rx="5" ry="5" fill="none" stroke="currentColor" strokeWidth="2" className="stroke-gray-300"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" fill="none" stroke="currentColor" strokeWidth="2" className="stroke-gray-300"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5" stroke="currentColor" strokeWidth="2" className="stroke-gray-300"/></SocialIcon>
-            <SocialIcon href="#"><path d="M4 4l16 16M4 20L20 4" stroke="currentColor" strokeWidth="2" className="stroke-gray-300 fill-none" strokeLinecap="round"/></SocialIcon>
-            <SocialIcon href="#"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 0 0 1.46 6.42 29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58 2.78 2.78 0 0 0 1.95 1.96C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.96-1.96A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z"/><polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" fill="gray"/></SocialIcon>
+            <SocialIcon href={settings.facebook_url || "#"}><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></SocialIcon>
+            <SocialIcon href={settings.instagram_url || "#"}><rect x="2" y="2" width="20" height="20" rx="5" ry="5" fill="none" stroke="currentColor" strokeWidth="2" className="stroke-gray-300"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" fill="none" stroke="currentColor" strokeWidth="2" className="stroke-gray-300"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5" stroke="currentColor" strokeWidth="2" className="stroke-gray-300"/></SocialIcon>
+            <SocialIcon href={settings.twitter_url || "#"}><path d="M4 4l16 16M4 20L20 4" stroke="currentColor" strokeWidth="2" className="stroke-gray-300 fill-none" strokeLinecap="round"/></SocialIcon>
+            <SocialIcon href={settings.youtube_url || "#"}><path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 0 0 1.46 6.42 29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58 2.78 2.78 0 0 0 1.95 1.96C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.96-1.96A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z"/><polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" fill="gray"/></SocialIcon>
           </div>
         </div>
 
@@ -58,15 +60,15 @@ export default function Footer() {
           <ul className="space-y-3 text-sm">
             <li className="flex items-start gap-3">
               <MapPin className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-              <span>Level 12, Cyber Hub, DLF Phase 2, Gurugram — 122002</span>
+              <span>{settings.address}</span>
             </li>
             <li className="flex items-center gap-3">
               <Phone className="w-4 h-4 text-amber-400 shrink-0" />
-              <a href="tel:+919876543210" className="hover:text-amber-400 transition-colors">+91 98765 43210</a>
+              <a href={`tel:${(settings.phone || "").replace(/\s+/g, "")}`} className="hover:text-amber-400 transition-colors">{settings.phone}</a>
             </li>
             <li className="flex items-center gap-3">
               <Mail className="w-4 h-4 text-amber-400 shrink-0" />
-              <a href="mailto:hello@boomerangtravel.com" className="hover:text-amber-400 transition-colors">hello@boomerangtravel.com</a>
+              <a href={`mailto:${settings.email}`} className="hover:text-amber-400 transition-colors">{settings.email}</a>
             </li>
           </ul>
         </div>

@@ -10,8 +10,10 @@ $action = $_GET['action'] ?? '';
 $ctrl   = new AuthController();
 
 match (true) {
-    $method === 'POST' && $action === 'login'  => $ctrl->login($body),
-    $method === 'POST' && $action === 'logout' => $ctrl->logout(),
-    $method === 'GET'  && $action === 'me'     => $ctrl->me(),
+    $method === 'POST' && $action === 'login'   => $ctrl->login($body),
+    $method === 'POST' && $action === 'logout'  => $ctrl->logout(),
+    $method === 'GET'  && $action === 'me'      => $ctrl->me(),
+    $method === 'PUT'  && $action === 'profile' => $ctrl->updateProfile($body),
     default => methodNotAllowed(),
 };
+

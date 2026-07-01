@@ -6,6 +6,7 @@ import {
   CheckCircle, Mail, Phone, Send, MessageCircle,
 } from "lucide-react";
 import { api } from "../api/api";
+import { useSettings } from "../context/SettingsContext";
 
 const offerings = [
   {
@@ -40,7 +41,8 @@ const features = [
 ];
 
 export default function MicePage() {
-  const [form, setForm]           = useState({ name: "", email: "", phone: "", company: "", event_type: "", attendees: "", message: "" });
+  const { settings } = useSettings();
+  const [form, setForm] = useState({ name: "", email: "", phone: "", company: "", event_type: "", attendees: "50-100", message: "" });
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError]         = useState("");
@@ -74,7 +76,7 @@ export default function MicePage() {
   const inputClass = "w-full border border-white/20 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 text-sm text-white placeholder-white/50 outline-none focus:ring-2 focus:ring-amber-400";
 
   return (
-    <div className="min-h-screen bg-teal-950 pt-16">
+    <div className="min-h-screen bg-teal-950 pt-20 lg:pt-24">
 
       {/* ── Hero ─────────────────────────────────────────────────────── */}
       <div className="relative overflow-hidden">
@@ -244,12 +246,12 @@ export default function MicePage() {
                       <Send className="w-5 h-5" /> {submitting ? "Submitting..." : "Register My Interest"}
                     </button>
                     <div className="flex flex-col sm:flex-row gap-3">
-                      <a href="https://wa.me/919876543210?text=Hi! I'm interested in MICE services."
+                      <a href={`https://wa.me/${(settings.whatsapp_number || "").replace(/\D/g, "")}?text=Hi! I'm interested in MICE services.`}
                         target="_blank" rel="noopener noreferrer"
                         className="flex-1 flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white font-semibold py-3 rounded-2xl transition-colors text-sm">
                         <MessageCircle className="w-4 h-4" /> WhatsApp Us
                       </a>
-                      <a href="mailto:mice@boomerangtravel.com"
+                      <a href={`mailto:${settings.email}`}
                         className="flex-1 flex items-center justify-center gap-2 bg-teal-800 hover:bg-teal-700 border border-teal-700 text-white font-semibold py-3 rounded-2xl transition-colors text-sm">
                         <Mail className="w-4 h-4" /> Email Directly
                       </a>

@@ -5,6 +5,7 @@ import {
   Award, Heart, Target, Compass, Globe, Users, Shield,
   Headphones, Star, ArrowRight, CheckCircle, MapPin,
 } from "lucide-react";
+import usePageContent from "../hooks/usePageContent";
 
 // ── Data ─────────────────────────────────────────────────────────────────────
 
@@ -101,8 +102,26 @@ const testimonials = [
 export default function AboutPage() {
   useEffect(() => { window.scrollTo(0, 0); }, []);
 
+  const defaultContent = {
+    about_title: "About Boomerang Travel",
+    about_tagline: "Born from a love of exploration. Built on a promise of excellence.\nWe don't just plan trips — we craft journeys that bring you back for more.",
+    about_story: "Boomerang Travel was founded with one simple belief: travel should feel like the best chapter of your life, not a logistical headache.\n\nFrom intimate luxury honeymoons in the Maldives to epic group adventures across Patagonia — we design journeys that reflect who you are and where your soul wants to go.\n\nWith over 15 years of experience, 10,000+ happy travellers, and a network spanning 50+ destinations, we've become a trusted name in premium travel curation.",
+    years_experience: "15+",
+    destinations_count: "50+",
+    travelers_count: "10K+"
+  };
+
+  const { content } = usePageContent("about", defaultContent);
+
+  const statsList = [
+    { num: content.years_experience,  label: "Years of Excellence" },
+    { num: content.destinations_count,  label: "Destinations" },
+    { num: content.travelers_count, label: "Happy Travellers" },
+    { num: "200+", label: "Curated Packages" },
+  ];
+
   return (
-    <div className="min-h-screen bg-white pt-16">
+    <div className="min-h-screen bg-white pt-20 lg:pt-24">
 
       {/* ── Hero ─────────────────────────────────────────────────────── */}
       <div className="relative h-[70vh] min-h-[480px] overflow-hidden">
@@ -116,11 +135,10 @@ export default function AboutPage() {
           <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}>
             <span className="text-amber-300 text-sm font-semibold tracking-widest uppercase">Our Story</span>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold mt-3 leading-tight">
-              About Boomerang Travel
+              {content.about_title}
             </h1>
-            <p className="text-teal-100 mt-4 max-w-2xl text-base sm:text-lg leading-relaxed">
-              Born from a love of exploration. Built on a promise of excellence.<br />
-              We don't just plan trips — we craft journeys that bring you back for more.
+            <p className="text-teal-100 mt-4 max-w-2xl text-base sm:text-lg leading-relaxed whitespace-pre-line">
+              {content.about_tagline}
             </p>
             <div className="flex flex-wrap justify-center gap-3 mt-8">
               <Link to="/packages"
@@ -139,7 +157,7 @@ export default function AboutPage() {
       {/* ── Stats bar ────────────────────────────────────────────────── */}
       <div className="bg-teal-900">
         <div className="max-w-5xl mx-auto px-4 py-8 grid grid-cols-2 lg:grid-cols-4 gap-6">
-          {stats.map(({ num, label }, i) => (
+          {statsList.map(({ num, label }, i) => (
             <motion.div key={label} initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }} transition={{ delay: i * 0.08 }} className="text-center">
               <div className="text-3xl font-extrabold bg-gradient-to-r from-amber-400 to-amber-300 bg-clip-text text-transparent">
@@ -160,18 +178,9 @@ export default function AboutPage() {
               We're Not Just a Travel Agency.<br />We're Storytellers.
             </h2>
             <div className="space-y-4 text-gray-600 leading-relaxed">
-              <p>
-                Boomerang Travel was founded with one simple belief: travel should feel like the best chapter
-                of your life, not a logistical headache.
-              </p>
-              <p>
-                From intimate luxury honeymoons in the Maldives to epic group adventures across Patagonia —
-                we design journeys that reflect who you are and where your soul wants to go.
-              </p>
-              <p>
-                With over 15 years of experience, 10,000+ happy travellers, and a network spanning 50+
-                destinations, we've become a trusted name in premium travel curation.
-              </p>
+              {content.about_story.split("\n\n").map((para, idx) => (
+                <p key={idx}>{para}</p>
+              ))}
             </div>
             <ul className="mt-8 space-y-3">
               {[

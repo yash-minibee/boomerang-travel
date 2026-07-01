@@ -2,7 +2,8 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, Search, Bell, Mail, ChevronDown, LogOut, User, Settings } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
+import { imageUrl } from "../../api/api";
 
 const notifications = [
   { id: 1, text: "New inquiry received", time: "2m ago", unread: true },
@@ -71,9 +72,13 @@ export default function Header({ onMenuClick }) {
         <div className="relative ml-1">
           <button onClick={() => { setProfileOpen(!profileOpen); setNotifOpen(false); }}
             className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl hover:bg-gray-100 transition-colors">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-teal-500 to-teal-700 flex items-center justify-center text-white text-xs font-bold ring-2 ring-teal-200">
-              {user?.name?.[0] ?? "A"}
-            </div>
+            {user?.avatar_url ? (
+              <img src={imageUrl(user.avatar_url)} alt="Admin" className="w-8 h-8 rounded-full object-cover ring-2 ring-teal-200" />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-teal-500 to-teal-700 flex items-center justify-center text-white text-xs font-bold ring-2 ring-teal-200">
+                {user?.name?.[0] ?? "A"}
+              </div>
+            )}
             <span className="hidden sm:block text-sm font-semibold text-gray-700">{user?.name?.split(" ")[0] ?? "Admin"}</span>
             <ChevronDown className="w-4 h-4 text-gray-400 hidden sm:block" />
           </button>
@@ -85,10 +90,10 @@ export default function Header({ onMenuClick }) {
                   <p className="font-bold text-gray-900 text-sm">{user?.name}</p>
                   <p className="text-xs text-gray-400">{user?.email}</p>
                 </div>
-                {[{ icon: User, label: "My Profile" }, { icon: Settings, label: "Settings" }].map(({ icon: Icon, label }) => (
-                  <button key={label} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                {[{ icon: User, label: "My Profile", path: "/profile" }, { icon: Settings, label: "Settings", path: "/settings" }].map(({ icon: Icon, label, path }) => (
+                  <Link key={label} to={path} onClick={() => setProfileOpen(false)} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
                     <Icon className="w-4 h-4 text-gray-400" />{label}
-                  </button>
+                  </Link>
                 ))}
                 <div className="border-t border-gray-100">
                   <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-500 hover:bg-red-50 transition-colors">

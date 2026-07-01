@@ -39,4 +39,19 @@ class AdminUserModel
         $stmt->execute();
         return $stmt->fetchAll();
     }
+
+    public function update(int $id, array $data): void
+    {
+        $fields = [];
+        $params = [];
+        foreach ($data as $key => $val) {
+            $fields[] = "$key = ?";
+            $params[] = $val;
+        }
+        $params[] = $id;
+        $sql = 'UPDATE admin_users SET ' . implode(', ', $fields) . ' WHERE id = ?';
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+    }
 }
+

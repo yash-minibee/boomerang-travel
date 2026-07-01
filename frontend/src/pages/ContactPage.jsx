@@ -1,22 +1,64 @@
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
-import { Phone, Mail, MapPin, Clock, Send, MessageCircle } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Phone, Mail, MapPin, Clock, Send, MessageCircle, ChevronDown } from "lucide-react";
 import { api } from "../api/api";
+import usePageContent from "../hooks/usePageContent";
+import { useSettings } from "../context/SettingsContext";
 
-const contactInfo = [
-  { icon: Phone, label: "Call Us", value: "+91 98765 43210", href: "tel:+919876543210", color: "from-teal-500 to-teal-700" },
-  { icon: Mail, label: "Email Us", value: "hello@boomerangtravel.com", href: "mailto:hello@boomerangtravel.com", color: "from-amber-400 to-amber-600" },
-  { icon: MapPin, label: "Visit Us", value: "Level 12, Cyber Hub, DLF Phase 2, Gurugram — 122002", href: "#", color: "from-teal-600 to-teal-800" },
-  { icon: Clock, label: "Office Hours", value: "Mon–Sat: 9AM–8PM IST\nSunday: 10AM–5PM IST", href: "#", color: "from-amber-500 to-amber-700" },
+const faqs = [
+  {
+    q: "How do I start planning my customized tour?",
+    a: "Simply fill out our trip inquiry form or send us a WhatsApp message. One of our dedicated travel experts will get in touch with you within 24 hours to discuss your preferences, suggest itineraries, and refine details until you are completely satisfied."
+  },
+  {
+    q: "What is typically included in your tour packages?",
+    a: "Our custom packages generally include premium accommodation, daily breakfast, airport transfers, domestic transport, guided sightseeing tours, and entrance tickets. International flights and optional activities can be added upon request."
+  },
+  {
+    q: "Can I make changes to my itinerary after booking?",
+    a: "Absolutely! We understand that plans can change. While minor adjustments can be made at any time, major changes (like accommodation or flight dates) are subject to availability and any change fees from our partners."
+  },
+  {
+    q: "Do you provide visa assistance?",
+    a: "Yes, we provide comprehensive visa guidance and document checklists for all destinations. While we assist you throughout the application process, final approval remains with the respective embassies."
+  },
+  {
+    q: "What is your cancellation and refund policy?",
+    a: "Our cancellation policies vary based on the specific hotels, airlines, and travel dates. Detailed policies will be shared with you at the time of sending the quote. We highly recommend purchasing travel insurance."
+  },
+  {
+    q: "How do I make payments for my booking?",
+    a: "We accept payments via bank transfer, credit/debit cards, and digital wallets. Typically, a 30-50% deposit is required to confirm bookings, with the remaining balance due 3-4 weeks prior to departure."
+  }
 ];
 
 export default function ContactPage() {
-  const [form, setForm] = useState({ name: "", email: "", phone: "", destination: "", date: "", travellers: "2", budget: "", message: "" });
+  const { settings } = useSettings();
+  const [form, setForm] = useState({ name: "", country: "", email: "", phone: "", destination: "", date: "", travellers: "", budget: "", message: "" });
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [openFaq, setOpenFaq] = useState(null);
 
   useEffect(() => { window.scrollTo(0, 0); }, []);
+
+  const defaultContent = {
+    contact_title: "Plan Your Dream Trip",
+    contact_subtitle: "Send us an inquiry and our travel experts will craft a personalized itinerary within 24 hours.",
+    phone: "+91 98765 43210",
+    email: "hello@boomerangtravel.com",
+    address: "Level 12, Cyber Hub, DLF Phase 2, Gurugram — 122002",
+    office_hours: "Mon–Sat: 9AM–8PM IST\nSunday: 10AM–5PM IST"
+  };
+
+  const { content } = usePageContent("contact", defaultContent);
+
+  const contactInfoList = [
+    { icon: Phone, label: "Call Us", value: settings.phone, href: `tel:${(settings.phone || "").replace(/\s+/g, '')}`, color: "from-teal-500 to-teal-700" },
+    { icon: Mail, label: "Email Us", value: settings.email, href: `mailto:${settings.email}`, color: "from-amber-400 to-amber-600" },
+    { icon: MapPin, label: "Visit Us", value: settings.address, href: "#", color: "from-teal-600 to-teal-800" },
+    { icon: Clock, label: "Office Hours", value: content.office_hours, href: "#", color: "from-amber-500 to-amber-700" },
+  ];
 
   const handleChange = e => setForm(f => ({ ...f, [e.target.name]: e.target.value }));
 
@@ -27,6 +69,7 @@ export default function ContactPage() {
     try {
       await api.submitInquiry({
         customer_name: form.name,
+        customer_country: form.country,
         customer_email: form.email,
         customer_phone: form.phone,
         package_name: form.destination,
@@ -47,12 +90,12 @@ export default function ContactPage() {
   const inputClass = "w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-teal-300";
 
   return (
-    <div className="min-h-screen bg-stone-50 pt-16">
+    <div className="min-h-screen bg-stone-50 pt-20 lg:pt-24">
       <div className="bg-gradient-to-br from-teal-700 via-teal-800 to-teal-950 py-16 px-4 text-center text-white">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <span className="text-amber-300 text-sm font-semibold tracking-widest uppercase">Get In Touch</span>
-          <h1 className="text-3xl sm:text-4xl font-extrabold mt-2">Plan Your Dream Trip</h1>
-          <p className="text-teal-200 mt-3 max-w-xl mx-auto">Send us an inquiry and our travel experts will craft a personalized itinerary within 24 hours.</p>
+          <h1 className="text-3xl sm:text-4xl font-extrabold mt-2">{content.contact_title}</h1>
+          <p className="text-teal-200 mt-3 max-w-xl mx-auto">{content.contact_subtitle}</p>
         </motion.div>
       </div>
 
@@ -60,7 +103,7 @@ export default function ContactPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
           <div className="space-y-5">
             <h2 className="text-xl font-extrabold text-gray-900 mb-2">Contact Information</h2>
-            {contactInfo.map((c, i) => (
+            {contactInfoList.map((c, i) => (
               <motion.a key={i} href={c.href} initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}
                 className="flex items-start gap-4 bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md hover:border-amber-200 transition-all">
                 <div className={`w-10 h-10 rounded-2xl bg-gradient-to-br ${c.color} flex items-center justify-center shrink-0`}>
@@ -72,7 +115,7 @@ export default function ContactPage() {
                 </div>
               </motion.a>
             ))}
-            <a href="https://wa.me/919876543210" target="_blank" rel="noopener noreferrer"
+            <a href={`https://wa.me/${(settings.whatsapp_number || "").replace(/\D/g, "")}`} target="_blank" rel="noopener noreferrer"
               className="flex items-center justify-center gap-2 w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3.5 rounded-2xl transition-colors">
               <MessageCircle className="w-5 h-5" /> Chat on WhatsApp
             </a>
@@ -99,36 +142,41 @@ export default function ContactPage() {
                       <input required name="name" value={form.name} onChange={handleChange} placeholder="Your full name" className={inputClass} />
                     </div>
                     <div>
+                      <label className="text-xs font-semibold text-gray-500 block mb-1.5">Country of residence *</label>
+                      <input required name="country" value={form.country} onChange={handleChange} placeholder="e.g. India, USA, UK" className={inputClass} />
+                    </div>
+                    <div>
                       <label className="text-xs font-semibold text-gray-500 block mb-1.5">Email Address *</label>
                       <input required type="email" name="email" value={form.email} onChange={handleChange} placeholder="your@email.com" className={inputClass} />
                     </div>
                     <div>
-                      <label className="text-xs font-semibold text-gray-500 block mb-1.5">Phone Number</label>
-                      <input name="phone" value={form.phone} onChange={handleChange} placeholder="+91 98765 43210" className={inputClass} />
+                      <label className="text-xs font-semibold text-gray-500 block mb-1.5">Phone Number *</label>
+                      <input required name="phone" value={form.phone} onChange={handleChange} placeholder="+91 98765 43210" className={inputClass} />
                     </div>
                     <div>
-                      <label className="text-xs font-semibold text-gray-500 block mb-1.5">Dream Destination</label>
-                      <input name="destination" value={form.destination} onChange={handleChange} placeholder="e.g. Bali, Europe, Japan..." className={inputClass} />
+                      <label className="text-xs font-semibold text-gray-500 block mb-1.5">Dream Destination *</label>
+                      <input required name="destination" value={form.destination} onChange={handleChange} placeholder="e.g. Bali, Europe, Japan..." className={inputClass} />
                     </div>
                     <div>
-                      <label className="text-xs font-semibold text-gray-500 block mb-1.5">Travel Date</label>
-                      <input type="date" name="date" value={form.date} onChange={handleChange} className={inputClass} />
+                      <label className="text-xs font-semibold text-gray-500 block mb-1.5">Travel Date *</label>
+                      <input required type="date" name="date" value={form.date} onChange={handleChange} className={inputClass} />
                     </div>
                     <div>
-                      <label className="text-xs font-semibold text-gray-500 block mb-1.5">Travellers</label>
-                      <select name="travellers" value={form.travellers} onChange={handleChange} className={inputClass}>
-                        {[1, 2, 3, 4, 5, 6, "7+"].map(n => <option key={n} value={n}>{n} {n === 1 ? "Adult" : "Adults"}</option>)}
+                      <label className="text-xs font-semibold text-gray-500 block mb-1.5">No. of Travellers *</label>
+                      <select required name="travellers" value={form.travellers} onChange={handleChange} className={inputClass}>
+                        <option value="">Select number of travellers</option>
+                        {[1, 2, 3, 4, 5, 6, "7+"].map(n => <option key={n} value={n}>{n} {n === 1 ? "Traveller" : "Travellers"}</option>)}
                       </select>
                     </div>
                     <div>
                       <label className="text-xs font-semibold text-gray-500 block mb-1.5">Budget per Person</label>
                       <select name="budget" value={form.budget} onChange={handleChange} className={inputClass}>
                         <option value="">Select budget range</option>
-                        <option>Under $1,000</option>
-                        <option>$1,000 – $2,000</option>
-                        <option>$2,000 – $3,500</option>
-                        <option>$3,500 – $5,000</option>
-                        <option>$5,000+</option>
+                        <option value="Under $1,000">Under $1,000</option>
+                        <option value="$1,000 – $2,000">$1,000 – $2,000</option>
+                        <option value="$2,000 – $3,500">$2,000 – $3,500</option>
+                        <option value="$3,500 – $5,000">$3,500 – $5,000</option>
+                        <option value="$5,000+">$5,000+</option>
                       </select>
                     </div>
                     <div className="sm:col-span-2">
@@ -148,6 +196,49 @@ export default function ContactPage() {
           </div>
         </div>
       </div>
+
+      {/* ── FAQ Section ────────────────────────────────────────── */}
+      <div className="bg-white border-t border-gray-100 py-20 px-4">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-12">
+            <span className="text-amber-500 text-sm font-semibold tracking-widest uppercase">FAQ</span>
+            <h2 className="text-3xl font-extrabold text-gray-900 mt-2">Frequently Asked Questions</h2>
+            <p className="text-gray-500 mt-3">Find quick answers to common questions about planning, bookings, and our travel services.</p>
+          </div>
+
+          <div className="space-y-4">
+            {faqs.map((faq, i) => {
+              const isOpen = openFaq === i;
+              return (
+                <div key={i} className="border border-gray-100 rounded-2xl overflow-hidden bg-stone-50/50 hover:bg-stone-50 transition-colors">
+                  <button
+                    onClick={() => setOpenFaq(isOpen ? null : i)}
+                    className="w-full flex items-center justify-between text-left px-6 py-5 font-semibold text-gray-800 transition-colors cursor-pointer"
+                  >
+                    <span>{faq.q}</span>
+                    <ChevronDown className={`w-5 h-5 text-gray-500 transition-transform duration-300 ${isOpen ? "rotate-180 text-teal-600" : ""}`} />
+                  </button>
+                  <AnimatePresence initial={false}>
+                    {isOpen && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.25, ease: "easeInOut" }}
+                      >
+                        <div className="px-6 pb-5 pt-1 text-gray-600 text-sm leading-relaxed border-t border-gray-100/50">
+                          {faq.a}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
     </div>
   );
 }

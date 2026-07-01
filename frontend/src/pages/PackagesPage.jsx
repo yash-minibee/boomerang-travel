@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { SlidersHorizontal, X } from "lucide-react";
 import PackageCard from "../components/PackageCard";
@@ -21,15 +22,24 @@ function mapPkg(pkg) {
 }
 
 export default function PackagesPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const destParam = searchParams.get("destination") || "All";
+
   const [packages, setPackages] = useState([]);
   const [total, setTotal] = useState(0);
   const [search, setSearch] = useState("");
-  const [destination, setDestination] = useState("All");
+  const [destination, setDestination] = useState(destParam);
   const [style, setStyle] = useState("All");
   const [duration, setDuration] = useState("Any");
   const [budget, setBudget] = useState(10000);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  // Sync state with URL search params changes
+  useEffect(() => {
+    const dest = searchParams.get("destination") || "All";
+    setDestination(dest);
+  }, [searchParams]);
 
   useEffect(() => { window.scrollTo(0, 0); }, []);
 
@@ -71,9 +81,17 @@ export default function PackagesPage() {
       <div>
         <h3 className="font-bold text-gray-800 text-sm mb-3">Destination</h3>
         <div className="space-y-2">
-          {["All", "Europe", "Asia", "Americas", "Africa", "Islands"].map(d => (
+          {["All", "Asia", "Africa", "North America", "South America", "Antarctica", "Europe", "Australia/Oceania"].map(d => (
             <label key={d} className="flex items-center gap-2.5 cursor-pointer">
-              <input type="radio" name="destination" value={d} checked={destination === d} onChange={() => setDestination(d)} className="accent-teal-600" />
+              <input type="radio" name="destination" value={d} checked={destination === d} onChange={() => {
+                setDestination(d);
+                if (d === "All") {
+                  searchParams.delete("destination");
+                } else {
+                  searchParams.set("destination", d);
+                }
+                setSearchParams(searchParams);
+              }} className="accent-teal-600" />
               <span className={`text-sm ${destination === d ? "text-teal-700 font-semibold" : "text-gray-600"}`}>{d}</span>
             </label>
           ))}
@@ -106,7 +124,15 @@ export default function PackagesPage() {
           ))}
         </div>
       </div>
-      <button onClick={() => { setSearch(""); setDestination("All"); setStyle("All"); setDuration("Any"); setBudget(10000); }}
+      <button onClick={() => {
+        setSearch("");
+        setDestination("All");
+        setStyle("All");
+        setDuration("Any");
+        setBudget(10000);
+        searchParams.delete("destination");
+        setSearchParams(searchParams);
+      }}
         className="w-full text-sm text-red-500 border border-red-200 hover:bg-red-50 py-2.5 rounded-xl transition-colors">
         Clear All Filters
       </button>
@@ -114,7 +140,7 @@ export default function PackagesPage() {
   );
 
   return (
-    <div className="min-h-screen bg-stone-50 pt-16">
+    <div className="min-h-screen bg-stone-50 pt-20 lg:pt-24">
       <div className="bg-gradient-to-br from-teal-700 via-teal-800 to-teal-950 py-16 px-4">
         <div className="max-w-7xl mx-auto text-center">
           <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-3xl sm:text-4xl font-extrabold text-white">
@@ -127,7 +153,7 @@ export default function PackagesPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <div className="flex gap-8">
           <aside className="hidden lg:block w-64 shrink-0">
-            <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 sticky top-24">
+            <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 sticky top-28">
               <h2 className="font-extrabold text-gray-900 text-base mb-6 flex items-center gap-2">
                 <SlidersHorizontal className="w-5 h-5 text-teal-600" /> Filters
               </h2>

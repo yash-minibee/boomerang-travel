@@ -46,6 +46,25 @@ class TestimonialController
         Response::success($model->findById($id), 'Status updated.');
     }
 
+    public function update(int $id, array $body): void
+    {
+        AuthMiddleware::handle();
+        $errors = ValidationMiddleware::validate($body, [
+            'customer_name' => 'required|min:2',
+            'review_text'   => 'required|min:10',
+            'rating'        => 'required|numeric',
+        ]);
+        if (!empty($errors)) {
+            Response::error('Validation failed.', 422, $errors);
+        }
+        $model = new TestimonialModel();
+        if (!$model->findById($id)) {
+            Response::notFound('Testimonial not found.');
+        }
+        $model->update($id, $body);
+        Response::success($model->findById($id), 'Testimonial updated.');
+    }
+
     public function destroy(int $id): void
     {
         AuthMiddleware::handle();

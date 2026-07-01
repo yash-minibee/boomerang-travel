@@ -3,10 +3,18 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Clock, Star, ArrowRight, MapPin } from "lucide-react";
 import { api, imageUrl } from "../api/api";
+import usePageContent from "../hooks/usePageContent";
 
 
 export default function FeaturedPackages() {
   const [packages, setPackages] = useState([]);
+
+  const defaultContent = {
+    packages_title: "Featured Packages",
+    packages_subtitle: "Our most loved luxury travel packages, curated for the discerning explorer."
+  };
+
+  const { content } = usePageContent("home", defaultContent);
 
   useEffect(() => {
     api.getPackages({ featured: 1, status: "active", limit: 3 })
@@ -21,8 +29,8 @@ export default function FeaturedPackages() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center mb-14">
           <span className="text-amber-600 font-semibold text-sm tracking-widest uppercase">Handpicked For You</span>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mt-2">Featured Packages</h2>
-          <p className="text-gray-500 mt-3 max-w-xl mx-auto">Our most loved luxury travel packages, curated for the discerning explorer.</p>
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mt-2">{content.packages_title}</h2>
+          <p className="text-gray-500 mt-3 max-w-xl mx-auto">{content.packages_subtitle}</p>
         </motion.div>
 
         <div className="space-y-8">

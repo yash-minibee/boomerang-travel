@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useParams } from "react-router-dom";
 import { Plus, X, ChevronDown, ChevronUp, Upload, Check, Utensils, Bus, Tag, Image as ImageIcon, Star } from "lucide-react";
 import PageHeader from "../components/ui/PageHeader";
 import { FormInput, FormSelect, FormTextarea } from "../components/ui/FormFields";
-import { packagesAPI, mediaAPI, imageUrl } from "../api/api";
+import { packagesAPI, mediaAPI, destinationsAPI, imageUrl } from "../api/api";
 
 const STEPS = ["Basic Info", "Gallery & Highlights", "Itinerary", "Hotels", "Inclusions & Policies"];
 const MEAL_OPTIONS = ["Breakfast", "Lunch", "Dinner", "Welcome Drink", "High Tea"];
@@ -116,8 +116,16 @@ export default function AddPackagePage() {
   const [saving, setSaving] = useState(false);
 
   // Step 0 — Basic Info
-  const [form, setForm] = useState({ name: "", slug: "", category: "", destination: "", duration: "", price: "", status: "active" });
+  const [form, setForm] = useState({ name: "", slug: "", category: "", destination: "", duration: "", price: "", rating: "", reviews: "", status: "active" });
   const [tags, setTags] = useState([]);
+  const [destinationsList, setDestinationsList] = useState([]);
+  const [showAddDestModal, setShowAddDestModal] = useState(false);
+
+  useEffect(() => {
+    destinationsAPI.list({ limit: 100 })
+      .then(res => setDestinationsList(res.data ?? []))
+      .catch(e => console.error("Error loading destinations:", e));
+  }, []);
 
   // Step 1 — Gallery & Highlights
   const [gallery, setGallery] = useState([]); // array of URL strings
@@ -162,9 +170,11 @@ export default function AddPackagePage() {
         name: pkg.title ?? "",
         slug: pkg.slug ?? "",
         category: pkg.category ?? "",
-        destination: pkg.destination_region ?? "",
+        destination: pkg.destination_id ?? "",
         duration: pkg.duration ?? "",
         price: pkg.starting_price ?? "",
+        rating: pkg.rating ?? "",
+        reviews: pkg.review_count ?? "",
         status: pkg.status ?? "active",
       });
       setTags(Array.isArray(pkg.tags) ? pkg.tags : []);
@@ -216,9 +226,11 @@ export default function AddPackagePage() {
         title: form.name,
         slug: form.slug,
         category: form.category,
-        destination_region: form.destination,
+        destination_id: form.destination ? Number(form.destination) : null,
         duration: form.duration,
         starting_price: form.price,
+        rating: form.rating ? Number(form.rating) : 0,
+        review_count: form.reviews ? Number(form.reviews) : 0,
         status: form.status,
         tags,
         gallery,
@@ -266,6 +278,29 @@ export default function AddPackagePage() {
     }
   };
 
+  const handleAddDestination = async (destForm) => {
+    try {
+      const res = await destinationsAPI.create({
+        name: destForm.name,
+        country: destForm.country,
+        region: destForm.region,
+        description: destForm.description,
+        featured: destForm.featured,
+        hero_image: destForm.hero_image,
+        highlights: destForm.highlights,
+      });
+      if (res.data) {
+        setDestinationsList(prev => [...prev, res.data]);
+        updateForm("destination", String(res.data.id));
+        setShowAddDestModal(false);
+        return res.data;
+      }
+    } catch (err) {
+      alert("Failed to save destination: " + (err.message || "Unknown error"));
+      throw err;
+    }
+  };
+
   // Cities derived from itinerary for hotel city dropdown
   const itineraryCities = [...new Set(itinerary.map(d => d.city).filter(Boolean))];
 
@@ -304,14 +339,32 @@ export default function AddPackagePage() {
         <option value="">Select category</option>
         {["Cultural", "Luxury", "Adventure", "Wellness", "Honeymoon", "Trekking"].map(c => <option key={c}>{c}</option>)}
       </FormSelect>
-      <FormSelect label="Destination Region" value={form.destination} onChange={e => updateForm("destination", e.target.value)}>
-        <option value="">Select destination</option>
-        {["Europe", "Asia", "Americas", "Africa", "Islands", "Middle East"].map(d => <option key={d}>{d}</option>)}
-      </FormSelect>
+      <div className="space-y-1.5 col-span-1">
+        <label className="text-sm font-semibold text-gray-700 block">Destination *</label>
+        <div className="flex gap-2 items-center">
+          <SearchableDestinationSelect
+            destinations={destinationsList}
+            value={form.destination}
+            onChange={val => updateForm("destination", val)}
+          />
+          <button
+            type="button"
+            onClick={() => setShowAddDestModal(true)}
+            className="w-11 h-11 shrink-0 flex items-center justify-center rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-600 transition-colors border border-teal-200"
+            title="Create new destination inline"
+          >
+            <Plus className="w-5 h-5" />
+          </button>
+        </div>
+      </div>
       <FormInput label="Duration" placeholder="e.g. 14 Days / 13 Nights" value={form.duration}
         onChange={e => updateForm("duration", e.target.value)} />
       <FormInput label="Starting Price ($)" type="number" placeholder="e.g. 2999" value={form.price}
         onChange={e => updateForm("price", e.target.value)} />
+      <FormInput label="Rating (0.0 - 5.0)" type="number" step="0.1" min="0" max="5" placeholder="e.g. 4.5" value={form.rating}
+        onChange={e => updateForm("rating", e.target.value)} />
+      <FormInput label="No. of Reviews" type="number" min="0" placeholder="e.g. 142" value={form.reviews}
+        onChange={e => updateForm("reviews", e.target.value)} />
       <FormSelect label="Status" value={form.status} onChange={e => updateForm("status", e.target.value)}>
         <option value="active">Active</option>
         <option value="draft">Draft</option>
@@ -811,6 +864,346 @@ export default function AddPackagePage() {
           </div>
         </div>
       </div>
+      <AddDestinationModal
+        open={showAddDestModal}
+        onClose={() => setShowAddDestModal(false)}
+        onSave={handleAddDestination}
+      />
+    </div>
+  );
+}
+
+// Inline destination modal helper
+function AddDestinationModal({ open, onClose, onSave }) {
+  const [name, setName] = useState("");
+  const [country, setCountry] = useState("");
+  const [region, setRegion] = useState("Europe");
+  const [featured, setFeatured] = useState("0");
+  const [description, setDescription] = useState("");
+  const [heroImage, setHeroImage] = useState("");
+  const [highlights, setHighlights] = useState([""]);
+  const [uploading, setUploading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const fileRef = useRef(null);
+
+  const handleImageUpload = async (file) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => setHeroImage(e.target.result);
+    reader.readAsDataURL(file);
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("type", "destinations");
+      const res = await mediaAPI.upload(fd);
+      if (res.data?.url) setHeroImage(res.data.url);
+    } catch (err) {
+      alert("Image upload failed: " + (err.message || "error"));
+      setHeroImage("");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!name.trim()) return;
+    setSaving(true);
+    try {
+      await onSave({
+        name,
+        country,
+        region,
+        featured: Number(featured),
+        description,
+        hero_image: heroImage || null,
+        highlights: highlights.filter(Boolean)
+      });
+      // Reset form
+      setName("");
+      setCountry("");
+      setRegion("Europe");
+      setFeatured("0");
+      setDescription("");
+      setHeroImage("");
+      setHighlights([""]);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <AnimatePresence>
+      {open && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/50" onClick={onClose} />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="relative bg-white rounded-3xl p-6 shadow-2xl max-w-lg w-full z-[101] max-h-[90vh] overflow-y-auto flex flex-col"
+          >
+            <button type="button" onClick={onClose} className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors z-10">
+              <X className="w-4 h-4 text-gray-500" />
+            </button>
+            
+            <h3 className="text-xl font-bold text-gray-900 mb-4 shrink-0">Add New Destination</h3>
+            
+            <form onSubmit={handleSubmit} className="space-y-4 pr-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-gray-700 block">Destination Name *</label>
+                  <input
+                    required
+                    value={name}
+                    onChange={e => setName(e.target.value)}
+                    placeholder="e.g. Kyoto"
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-teal-300"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-gray-700 block">Country *</label>
+                  <input
+                    required
+                    value={country}
+                    onChange={e => setCountry(e.target.value)}
+                    placeholder="e.g. Japan"
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-teal-300"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-gray-700 block">Region (Continent) *</label>
+                  <select
+                    value={region}
+                    onChange={e => setRegion(e.target.value)}
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-teal-300 bg-white"
+                  >
+                    {["Asia", "Africa", "North America", "South America", "Antarctica", "Europe", "Australia/Oceania"].map(r => (
+                      <option key={r} value={r}>{r}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-gray-700 block">Featured *</label>
+                  <select
+                    value={featured}
+                    onChange={e => setFeatured(e.target.value)}
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-teal-300 bg-white"
+                  >
+                    <option value="0">No</option>
+                    <option value="1">Yes</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-gray-700 block">Description</label>
+                <textarea
+                  value={description}
+                  onChange={e => setDescription(e.target.value)}
+                  placeholder="Lush gardens and ancient shrines..."
+                  rows={2}
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-teal-300"
+                />
+              </div>
+
+              {/* Hero Image */}
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-gray-700 block">Hero Image</label>
+                {heroImage && !heroImage.startsWith("data:") ? (
+                  <div className="relative rounded-xl overflow-hidden h-32 bg-gray-100">
+                    <img src={imageUrl(heroImage)} alt="Hero" className="w-full h-full object-cover" />
+                    <button type="button" onClick={() => setHeroImage("")}
+                      className="absolute top-2 right-2 w-6 h-6 bg-black/50 hover:bg-red-500 text-white rounded-full flex items-center justify-center">
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ) : heroImage.startsWith("data:") ? (
+                  <div className="relative rounded-xl overflow-hidden h-32 bg-gray-100">
+                    <img src={heroImage} alt="Uploading…" className="w-full h-full object-cover opacity-60" />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-5 h-5 border-2 border-teal-600 border-t-transparent rounded-full animate-spin" />
+                    </div>
+                  </div>
+                ) : null}
+
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => fileRef.current?.click()}
+                    className="flex-1 flex items-center justify-center gap-1.5 border border-dashed border-gray-300 rounded-xl py-2 px-3 hover:border-teal-400 hover:text-teal-600 text-gray-500 text-xs font-medium transition-colors cursor-pointer"
+                  >
+                    <Upload className="w-4 h-4 shrink-0" />
+                    {uploading ? "Uploading..." : heroImage ? "Change Image" : "Upload Image"}
+                  </button>
+                  <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden"
+                    onChange={e => handleImageUpload(e.target.files[0])} />
+                </div>
+                <div>
+                  <input
+                    type="url"
+                    value={heroImage?.startsWith("http") ? heroImage : ""}
+                    onChange={e => setHeroImage(e.target.value)}
+                    placeholder="Or paste image URL…"
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-teal-300"
+                  />
+                </div>
+              </div>
+
+              {/* Highlights */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold text-gray-700">Highlights</label>
+                  <button type="button" onClick={() => setHighlights(h => [...h, ""])}
+                    className="text-teal-600 text-xs font-medium flex items-center gap-1 hover:text-teal-700">
+                    <Plus className="w-3.5 h-3.5" /> Add
+                  </button>
+                </div>
+                <div className="space-y-1.5 max-h-32 overflow-y-auto pr-1">
+                  {highlights.map((h, i) => (
+                    <div key={i} className="flex gap-2">
+                      <input
+                        value={h}
+                        onChange={e => setHighlights(arr => arr.map((a, idx) => idx === i ? e.target.value : a))}
+                        placeholder={`e.g. Best sunset views`}
+                        className="flex-1 border border-gray-200 rounded-xl px-3 py-1.5 text-xs outline-none focus:ring-2 focus:ring-teal-300"
+                      />
+                      {highlights.length > 1 && (
+                        <button type="button" onClick={() => setHighlights(arr => arr.filter((_, idx) => idx !== i))}
+                          className="w-8 h-8 shrink-0 flex items-center justify-center rounded-xl bg-red-50 text-red-400 hover:bg-red-100">
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Submit Buttons */}
+              <div className="flex gap-3 pt-4 border-t border-gray-100 shrink-0">
+                <button type="button" onClick={onClose} className="flex-1 border border-gray-200 text-gray-700 font-semibold py-2.5 rounded-xl hover:bg-gray-50 transition-colors text-sm">Cancel</button>
+                <button type="submit" disabled={saving || uploading} className="flex-1 bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2.5 rounded-xl transition-colors text-sm disabled:opacity-50">
+                  {saving ? "Saving..." : "Add Destination"}
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
+  );
+}
+
+// Custom Searchable Destination dropdown with pictures and search support
+function SearchableDestinationSelect({ destinations, value, onChange }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (containerRef.current && !containerRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const selectedDest = destinations.find(d => String(d.id) === String(value));
+  const filteredDestinations = destinations.filter(d =>
+    d.name.toLowerCase().includes(search.toLowerCase()) ||
+    (d.country && d.country.toLowerCase().includes(search.toLowerCase())) ||
+    (d.region && d.region.toLowerCase().includes(search.toLowerCase()))
+  );
+
+  return (
+    <div ref={containerRef} className="relative flex-1">
+      {/* Trigger Button */}
+      <button
+        type="button"
+        onClick={() => { setIsOpen(!isOpen); setSearch(""); }}
+        className="w-full flex items-center justify-between border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-teal-300 bg-white min-h-[46px] text-left cursor-pointer"
+      >
+        {selectedDest ? (
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg overflow-hidden shrink-0 bg-teal-50 border border-gray-100">
+              {selectedDest.hero_image ? (
+                <img src={imageUrl(selectedDest.hero_image)} alt={selectedDest.name} className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-teal-600 bg-teal-50 text-xs font-bold font-mono">
+                  {selectedDest.name[0]}
+                </div>
+              )}
+            </div>
+            <div>
+              <span className="font-semibold text-gray-800">{selectedDest.name}</span>
+              <span className="text-gray-400 text-xs ml-1.5">({selectedDest.region})</span>
+            </div>
+          </div>
+        ) : (
+          <span className="text-gray-400">Select destination</span>
+        )}
+        <ChevronDown className="w-4 h-4 text-gray-400 ml-2 shrink-0" />
+      </button>
+
+      {/* Dropdown Options Box */}
+      {isOpen && (
+        <div className="absolute top-full left-0 right-0 mt-1.5 bg-white border border-gray-150 rounded-2xl shadow-xl z-50 p-2 space-y-2 max-h-80 flex flex-col">
+          {/* Search Box */}
+          <div className="relative shrink-0">
+            <input
+              type="text"
+              autoFocus
+              placeholder="Search destination..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-teal-300 bg-gray-50"
+            />
+          </div>
+
+          {/* List */}
+          <div className="overflow-y-auto flex-1 divide-y divide-gray-50 max-h-48">
+            {filteredDestinations.length > 0 ? (
+              filteredDestinations.map(d => (
+                <button
+                  key={d.id}
+                  type="button"
+                  onClick={() => {
+                    onChange(String(d.id));
+                    setIsOpen(false);
+                  }}
+                  className={`w-full flex items-center gap-3 px-3 py-2 text-left text-sm hover:bg-teal-50 hover:text-teal-700 rounded-xl transition-colors ${String(d.id) === String(value) ? "bg-teal-50/70 text-teal-800 font-semibold" : "text-gray-700"}`}
+                >
+                  <div className="w-8 h-8 rounded-lg overflow-hidden shrink-0 bg-teal-50 border border-gray-100">
+                    {d.hero_image ? (
+                      <img src={imageUrl(d.hero_image)} alt={d.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-teal-600 bg-teal-50 text-xs font-bold font-mono">
+                        {d.name[0]}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="truncate font-medium text-xs sm:text-sm text-gray-800">{d.name}</p>
+                    <p className="text-[10px] sm:text-xs text-gray-400 truncate">{d.country} · {d.region}</p>
+                  </div>
+                </button>
+              ))
+            ) : (
+              <div className="text-center py-4 text-xs text-gray-400">
+                No destinations found.
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

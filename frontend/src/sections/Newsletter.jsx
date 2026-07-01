@@ -1,7 +1,14 @@
 import { motion } from "framer-motion";
 import { Mail, ArrowRight } from "lucide-react";
+import usePageContent from "../hooks/usePageContent";
 
 export default function Newsletter() {
+  const defaultContent = {
+    newsletter_title: "Travel Inspiration, Delivered"
+  };
+
+  const { content } = usePageContent("home", defaultContent);
+
   return (
     <section className="py-20 bg-gradient-to-br from-teal-700 via-teal-800 to-teal-950 relative overflow-hidden">
       <div className="absolute top-0 left-1/4 w-72 h-72 bg-amber-400/10 rounded-full blur-3xl" />
@@ -13,7 +20,7 @@ export default function Newsletter() {
             <Mail className="w-8 h-8 text-amber-300" />
           </div>
 
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-white">Travel Inspiration, Delivered</h2>
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-white">{content.newsletter_title}</h2>
           <p className="text-teal-200 text-lg max-w-xl mx-auto">
             Subscribe to receive exclusive deals, early-bird offers, and curated travel inspiration straight to your inbox.
           </p>

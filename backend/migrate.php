@@ -14,6 +14,40 @@ $schema = file_get_contents(__DIR__ . '/migrations/schema.sql');
 $db->exec($schema);
 echo "Tables created.\n";
 
+// Add destination_id to packages table if it does not exist (for existing DBs)
+try {
+    $db->query("SELECT destination_id FROM packages LIMIT 1");
+} catch (PDOException $e) {
+    try {
+        $db->exec("ALTER TABLE packages ADD COLUMN destination_id INTEGER REFERENCES destinations(id)");
+        echo "Added destination_id column to packages table.\n";
+    } catch (PDOException $ex) {
+        echo "Could not alter packages table: " . $ex->getMessage() . "\n";
+    }
+}
+
+// Safely drop legacy destination_region column
+try {
+    $db->query("SELECT destination_region FROM packages LIMIT 1");
+    // If it did not throw, column exists. Try to drop it.
+    $db->exec("ALTER TABLE packages DROP COLUMN destination_region");
+    echo "Dropped legacy destination_region column from packages table.\n";
+} catch (PDOException $e) {
+    // If it threw "no such column", it is already dropped. Otherwise, DROP COLUMN is unsupported.
+}
+
+// Add customer_country to inquiries table if it does not exist (for existing DBs)
+try {
+    $db->query("SELECT customer_country FROM inquiries LIMIT 1");
+} catch (PDOException $e) {
+    try {
+        $db->exec("ALTER TABLE inquiries ADD COLUMN customer_country TEXT");
+        echo "Added customer_country column to inquiries table.\n";
+    } catch (PDOException $ex) {
+        echo "Could not alter inquiries table: " . $ex->getMessage() . "\n";
+    }
+}
+
 // ── Seed: Admin User ────────────────────────────────────────────────────────
 $stmt = $db->prepare('SELECT id FROM admin_users WHERE email = ?');
 $stmt->execute(['admin@boomerang.com']);
@@ -24,13 +58,42 @@ if (!$stmt->fetch()) {
     echo "Admin user seeded.\n";
 }
 
+// ── Seed: Destinations ──────────────────────────────────────────────────────
+$destinations = [
+    ['Santorini',    'Greece',    'Europe',   'Iconic white-washed cliffs, volcanic beaches and breathtaking sunsets.',    1],
+    ['Bali',         'Indonesia', 'Asia',     'Lush rice terraces, ancient temples and world-class surf.',                 1],
+    ['Kyoto',        'Japan',     'Asia',     'Timeless temples, cherry blossoms and traditional tea ceremonies.',         1],
+    ['Maldives',     'Maldives',  'Islands',  'Overwater bungalows, crystal lagoons and vibrant coral reefs.',             1],
+    ['Machu Picchu', 'Peru',      'Americas', 'Lost city of the Incas perched high in the Andes Mountains.',              0],
+    ['Marrakech',    'Morocco',   'Africa',   'Vibrant souks, fragrant spice markets and Sahara desert adventures.',       0],
+    ['Amalfi Coast', 'Italy',     'Europe',   'Dramatic clifftop villages, turquoise waters and Italian cuisine.',         1],
+    ['Paris',        'France',    'Europe',   'City of lights, Michelin dining, art, fashion and the Eiffel Tower.',       0],
+];
+
+$destCheck = $db->prepare('SELECT id FROM destinations WHERE name = ?');
+$destIns   = $db->prepare(
+    'INSERT INTO destinations (name, country, region, description, featured) VALUES (?, ?, ?, ?, ?)'
+);
+$destNameMap = [];
+foreach ($destinations as [$name, $country, $region, $desc, $featured]) {
+    $destCheck->execute([$name]);
+    $row = $destCheck->fetch();
+    if (!$row) {
+        $destIns->execute([$name, $country, $region, $desc, $featured]);
+        $destNameMap[$name] = (int)$db->lastInsertId();
+    } else {
+        $destNameMap[$name] = (int)$row['id'];
+    }
+}
+echo "Destinations seeded.\n";
+
 // ── Seed: Packages ──────────────────────────────────────────────────────────
 $packages = [
     [
         'title'              => 'European Grand Tour',
         'slug'               => 'european-grand-tour',
         'category'           => 'Cultural',
-        'destination_region' => 'Europe',
+        'destination_name'   => 'Paris',
         'duration'           => '14 Days / 13 Nights',
         'starting_price'     => 3299,
         'status'             => 'active',
@@ -51,7 +114,7 @@ $packages = [
         'title'              => 'Bali Bliss Retreat',
         'slug'               => 'bali-bliss-retreat',
         'category'           => 'Wellness',
-        'destination_region' => 'Asia',
+        'destination_name'   => 'Bali',
         'duration'           => '8 Days / 7 Nights',
         'starting_price'     => 1299,
         'status'             => 'active',
@@ -72,7 +135,7 @@ $packages = [
         'title'              => 'Japan Cherry Blossom Trail',
         'slug'               => 'japan-cherry-blossom',
         'category'           => 'Cultural',
-        'destination_region' => 'Asia',
+        'destination_name'   => 'Kyoto',
         'duration'           => '10 Days / 9 Nights',
         'starting_price'     => 2499,
         'status'             => 'active',
@@ -93,7 +156,7 @@ $packages = [
         'title'              => 'Maldives Luxury Escape',
         'slug'               => 'maldives-luxury-escape',
         'category'           => 'Luxury',
-        'destination_region' => 'Islands',
+        'destination_name'   => 'Maldives',
         'duration'           => '6 Days / 5 Nights',
         'starting_price'     => 3499,
         'status'             => 'active',
@@ -114,7 +177,7 @@ $packages = [
         'title'              => 'Patagonia Adventure Trek',
         'slug'               => 'patagonia-adventure-trek',
         'category'           => 'Adventure',
-        'destination_region' => 'Americas',
+        'destination_name'   => 'Machu Picchu',
         'duration'           => '12 Days / 11 Nights',
         'starting_price'     => 2899,
         'status'             => 'active',
@@ -135,7 +198,7 @@ $packages = [
         'title'              => 'Morocco Desert & Medinas',
         'slug'               => 'morocco-desert-medinas',
         'category'           => 'Cultural',
-        'destination_region' => 'Africa',
+        'destination_name'   => 'Marrakech',
         'duration'           => '9 Days / 8 Nights',
         'starting_price'     => 1599,
         'status'             => 'active',
@@ -156,7 +219,7 @@ $packages = [
 
 $pkgStmt = $db->prepare('SELECT id FROM packages WHERE slug = ?');
 $ins     = $db->prepare(
-    'INSERT INTO packages (title, slug, category, destination_region, duration, starting_price, status, featured,
+    'INSERT INTO packages (title, slug, category, destination_id, duration, starting_price, status, featured,
      rating, review_count, tags, highlights, inclusions, exclusions,
      policy_cancellation, policy_refund, policy_payment, meta_title, meta_description, gallery)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
@@ -165,8 +228,9 @@ $ins     = $db->prepare(
 foreach ($packages as $p) {
     $pkgStmt->execute([$p['slug']]);
     if (!$pkgStmt->fetch()) {
+        $destId = $destNameMap[$p['destination_name']] ?? null;
         $ins->execute([
-            $p['title'], $p['slug'], $p['category'], $p['destination_region'], $p['duration'],
+            $p['title'], $p['slug'], $p['category'], $destId, $p['duration'],
             $p['starting_price'], $p['status'], $p['featured'], $p['rating'], $p['review_count'],
             $p['tags'], $p['highlights'], $p['inclusions'], $p['exclusions'],
             $p['policy_cancellation'], $p['policy_refund'], $p['policy_payment'],
@@ -176,49 +240,25 @@ foreach ($packages as $p) {
 }
 echo "Packages seeded.\n";
 
-// ── Seed: Destinations ──────────────────────────────────────────────────────
-$destinations = [
-    ['Santorini',    'Greece',    'Europe',   'Iconic white-washed cliffs, volcanic beaches and breathtaking sunsets.',    1],
-    ['Bali',         'Indonesia', 'Asia',     'Lush rice terraces, ancient temples and world-class surf.',                 1],
-    ['Kyoto',        'Japan',     'Asia',     'Timeless temples, cherry blossoms and traditional tea ceremonies.',         1],
-    ['Maldives',     'Maldives',  'Islands',  'Overwater bungalows, crystal lagoons and vibrant coral reefs.',             1],
-    ['Machu Picchu', 'Peru',      'Americas', 'Lost city of the Incas perched high in the Andes Mountains.',              0],
-    ['Marrakech',    'Morocco',   'Africa',   'Vibrant souks, fragrant spice markets and Sahara desert adventures.',       0],
-    ['Amalfi Coast', 'Italy',     'Europe',   'Dramatic clifftop villages, turquoise waters and Italian cuisine.',         1],
-    ['Paris',        'France',    'Europe',   'City of lights, Michelin dining, art, fashion and the Eiffel Tower.',       0],
-];
-
-$destCheck = $db->prepare('SELECT id FROM destinations WHERE name = ?');
-$destIns   = $db->prepare(
-    'INSERT INTO destinations (name, country, region, description, featured) VALUES (?, ?, ?, ?, ?)'
-);
-foreach ($destinations as [$name, $country, $region, $desc, $featured]) {
-    $destCheck->execute([$name]);
-    if (!$destCheck->fetch()) {
-        $destIns->execute([$name, $country, $region, $desc, $featured]);
-    }
-}
-echo "Destinations seeded.\n";
-
 // ── Seed: Inquiries ─────────────────────────────────────────────────────────
 $inquiries = [
-    ['Priya Sharma',   'priya@email.com',   '+91 98765 43210', 'European Grand Tour',       '2025-09-15', 2, '$3,000–$5,000', 'Looking for a honeymoon trip.',    'New'],
-    ['Rahul Mehta',    'rahul@email.com',   '+91 87654 32109', 'Bali Bliss Retreat',        '2025-08-20', 4, '$1,000–$2,000', 'Family trip to Bali.',              'Contacted'],
-    ['Ananya Patel',   'ananya@email.com',  '+91 76543 21098', 'Japan Cherry Blossom Trail','2026-03-25', 2, '$2,000–$3,500', 'Japan during cherry blossom.',     'Proposal Sent'],
-    ['Vikram Singh',   'vikram@email.com',  '+91 65432 10987', 'Maldives Luxury Escape',    '2025-07-10', 2, '$5,000+',       'Anniversary trip to Maldives.',     'Confirmed'],
-    ['Sneha Iyer',     'sneha@email.com',   '+91 54321 09876', 'Morocco Desert & Medinas',  '2025-10-01', 3, '$1,000–$2,000', 'Girls trip to Morocco.',            'Closed'],
-    ['Arjun Nair',     'arjun@email.com',   '+91 43210 98765', 'Patagonia Adventure Trek',  '2025-11-15', 5, '$2,000–$3,500', 'Adventure group trip.',             'New'],
+    ['Priya Sharma',   'priya@email.com',   '+91 98765 43210', 'India', 'European Grand Tour',       '2025-09-15', 2, '4000', 'Looking for a honeymoon trip.',    'New'],
+    ['Rahul Mehta',    'rahul@email.com',   '+91 87654 32109', 'India', 'Bali Bliss Retreat',        '2025-08-20', 4, '1500', 'Family trip to Bali.',              'Contacted'],
+    ['Ananya Patel',   'ananya@email.com',  '+91 76543 21098', 'India', 'Japan Cherry Blossom Trail','2026-03-25', 2, '3000', 'Japan during cherry blossom.',     'Proposal Sent'],
+    ['Vikram Singh',   'vikram@email.com',  '+91 65432 10987', 'USA',   'Maldives Luxury Escape',    '2025-07-10', 2, '6000', 'Anniversary trip to Maldives.',     'Confirmed'],
+    ['Sneha Iyer',     'sneha@email.com',   '+91 54321 09876', 'India', 'Morocco Desert & Medinas',  '2025-10-01', 3, '1800', 'Girls trip to Morocco.',            'Closed'],
+    ['Arjun Nair',     'arjun@email.com',   '+91 43210 98765', 'India', 'Patagonia Adventure Trek',  '2025-11-15', 5, '2800', 'Adventure group trip.',             'New'],
 ];
 
 $inqCheck = $db->prepare('SELECT id FROM inquiries WHERE customer_email = ? AND package_name = ?');
 $inqIns   = $db->prepare(
-    'INSERT INTO inquiries (customer_name, customer_email, customer_phone, package_name, travel_date, travellers, budget_range, message, status)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    'INSERT INTO inquiries (customer_name, customer_email, customer_phone, customer_country, package_name, travel_date, travellers, budget_range, message, status)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
 );
-foreach ($inquiries as [$name, $email, $phone, $pkg, $date, $travellers, $budget, $msg, $status]) {
+foreach ($inquiries as [$name, $email, $phone, $country, $pkg, $date, $travellers, $budget, $msg, $status]) {
     $inqCheck->execute([$email, $pkg]);
     if (!$inqCheck->fetch()) {
-        $inqIns->execute([$name, $email, $phone, $pkg, $date, $travellers, $budget, $msg, $status]);
+        $inqIns->execute([$name, $email, $phone, $country, $pkg, $date, $travellers, $budget, $msg, $status]);
         // Upsert customer
         $custCheck = $db->prepare('SELECT id FROM customers WHERE email = ?');
         $custCheck->execute([$email]);
@@ -251,12 +291,14 @@ echo "Testimonials seeded.\n";
 
 // ── Seed: Site Content ──────────────────────────────────────────────────────
 $content = [
-    ['home',    'hero_title',          'The World Awaits Your Next Adventure'],
+    ['home',    'hero_title_line1',    'The World Awaits'],
+    ['home',    'hero_title_line2',    'Your Next Adventure'],
     ['home',    'hero_subtitle',       'Luxury curated travel packages to the world\'s most breathtaking destinations.'],
     ['home',    'hero_badge',          '✈️ Crafting Extraordinary Journeys Since 2010'],
     ['home',    'packages_title',      'Featured Packages'],
     ['home',    'packages_subtitle',   'Our most loved luxury travel packages, curated for the discerning explorer.'],
     ['home',    'newsletter_title',    'Travel Inspiration, Delivered'],
+    ['home',    'home_continent_sections',  '[{"id":"sec-europe","continent":"Europe","title":"European Escapes","subtitle":"Indulge in iconic landmarks, clifftop vistas, and luxury cultural excursions across Europe.","badge":"Romance & History"},{"id":"sec-asia","continent":"Asia","title":"Asian Adventures","subtitle":"Immerse yourself in lush gardens, ancient temples, tropical retreats, and vibrant local cuisines.","badge":"Cultures & Paradises"}]'],
     ['about',   'about_title',         'About Boomerang Travel'],
     ['about',   'about_tagline',       'Born from a love of exploration. Built on a promise of excellence.'],
     ['about',   'about_story',         'Boomerang Global Travel was founded in 2010 with one simple belief: travel should feel like the best chapter of your life.'],

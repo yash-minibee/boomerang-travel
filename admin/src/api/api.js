@@ -90,6 +90,7 @@ export const authAPI = {
   login:  (body)  => post('auth.php', { action: 'login' }, body),
   logout: ()      => post('auth.php', { action: 'logout' }),
   me:     ()      => get('auth.php',  { action: 'me' }),
+  updateProfile: (body) => put('auth.php', { action: 'profile' }, body),
 };
 
 // ── Packages ────────────────────────────────────────────────────────────────
@@ -135,6 +136,7 @@ export const testimonialsAPI = {
   listPublic:   ()             => get('testimonials.php'),
   listAll:      ()             => get('testimonials.php', { scope: 'all' }),
   submit:       (data)         => post('testimonials.php', {}, data),
+  update:       (id, data)     => put('testimonials.php', { id }, data),
   updateStatus: (id, status)   => patch('testimonials.php', { id, action: 'status' }, { status }),
   delete:       (id)           => del('testimonials.php', { id }),
 };

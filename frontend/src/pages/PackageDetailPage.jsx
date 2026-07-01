@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import PackageCard from "../components/PackageCard";
 import { api, imageUrl } from "../api/api";
+import { useSettings } from "../context/SettingsContext";
 
 function mapPkg(pkg) {
   return {
@@ -23,6 +24,7 @@ function mapPkg(pkg) {
 
 export default function PackageDetailPage() {
   const { slug } = useParams();
+  const { settings } = useSettings();
   const navigate = useNavigate();
   const [pkg, setPkg] = useState(null);
   const [related, setRelated] = useState([]);
@@ -75,7 +77,7 @@ export default function PackageDetailPage() {
   };
 
   if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-stone-50 pt-16">
+    <div className="min-h-screen flex items-center justify-center bg-stone-50 pt-20 lg:pt-24">
       <div className="w-10 h-10 border-4 border-teal-600 border-t-transparent rounded-full animate-spin" />
     </div>
   );
@@ -97,7 +99,7 @@ export default function PackageDetailPage() {
   const hasExclusions = pkg.exclusions?.length > 0;
 
   return (
-    <div className="min-h-screen bg-stone-50 pt-16">
+    <div className="min-h-screen bg-stone-50 pt-20 lg:pt-24">
 
       {/* ── Hero Gallery ────────────────────────────────────────── */}
       <div className="relative h-[55vh] lg:h-[65vh] overflow-hidden bg-teal-950">
@@ -447,12 +449,12 @@ export default function PackageDetailPage() {
                         className="w-full bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white font-bold py-3.5 rounded-2xl flex items-center justify-center gap-2 transition-all disabled:opacity-60">
                         <Mail className="w-4 h-4" /> {submitting ? "Sending..." : "Send Inquiry"}
                       </button>
-                      <a href={`https://wa.me/919876543210?text=Hi! I'm interested in the ${encodeURIComponent(pkg.title)} package.`}
+                      <a href={`https://wa.me/${(settings.whatsapp_number || "").replace(/\D/g, "")}?text=Hi! I'm interested in the ${encodeURIComponent(pkg.title)} package.`}
                         target="_blank" rel="noopener noreferrer"
                         className="w-full flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white font-bold py-3.5 rounded-2xl transition-all">
                         <MessageCircle className="w-4 h-4" /> WhatsApp Now
                       </a>
-                      <a href="tel:+919876543210"
+                      <a href={`tel:${(settings.phone || "").replace(/\s+/g, "")}`}
                         className="w-full flex items-center justify-center gap-2 border-2 border-gray-200 hover:border-amber-400 text-gray-700 font-semibold py-3 rounded-2xl text-sm transition-colors">
                         <Phone className="w-4 h-4 text-amber-500" /> Call Us
                       </a>

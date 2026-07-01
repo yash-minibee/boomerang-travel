@@ -2,10 +2,11 @@ import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  LayoutDashboard, Package, MapPin, MessageSquare, Users,
-  Star, Image, Globe, Settings, ChevronDown,
-  Plus, List, X, Compass
+  LayoutDashboard, Package, Star, Globe, Settings, ChevronDown,
+  Plus, List, X, Compass, MessageSquare
 } from "lucide-react";
+import { useAuth } from "../../context/AuthContext";
+import { imageUrl } from "../../api/api";
 
 const nav = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
@@ -27,9 +28,7 @@ const nav = [
       { label: "Custom Requests", icon: List, path: "/inquiries/custom" },
     ]
   },
-  { label: "Customers", icon: Users, path: "/customers" },
   { label: "Testimonials", icon: Star, path: "/testimonials" },
-  { label: "Media Library", icon: Image, path: "/media" },
   {
     label: "Website Content", icon: Globe, children: [
       { label: "Home Page", icon: Globe, path: "/content/home" },
@@ -99,6 +98,7 @@ function NavItem({ item, onClose }) {
 }
 
 export default function Sidebar({ mobileOpen, onClose }) {
+  const { user } = useAuth();
   const content = (
     <div className="h-full flex flex-col bg-teal-950">
       {/* Logo */}
@@ -128,13 +128,19 @@ export default function Sidebar({ mobileOpen, onClose }) {
 
       {/* Bottom */}
       <div className="p-4 border-t border-teal-800">
-        <div className="flex items-center gap-3 px-3 py-2">
-          <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80" alt="Admin" className="w-8 h-8 rounded-full object-cover ring-2 ring-amber-400/40" />
+        <Link to="/profile" onClick={onClose} className="flex items-center gap-3 px-3 py-2 hover:bg-teal-900/40 rounded-xl transition-colors">
+          {user?.avatar_url ? (
+            <img src={imageUrl(user.avatar_url)} alt="Admin" className="w-8 h-8 rounded-full object-cover ring-2 ring-amber-400/40" />
+          ) : (
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white text-xs font-bold ring-2 ring-amber-400/40">
+              {user?.name?.[0] ?? "A"}
+            </div>
+          )}
           <div className="flex-1 min-w-0">
-            <div className="text-white text-sm font-semibold truncate">Aryan Kapoor</div>
-            <div className="text-teal-400 text-xs">Super Admin</div>
+            <div className="text-white text-sm font-semibold truncate">{user?.name ?? "Admin"}</div>
+            <div className="text-teal-400 text-xs capitalize">{(user?.role ?? "editor").replace('_', ' ')}</div>
           </div>
-        </div>
+        </Link>
       </div>
     </div>
   );

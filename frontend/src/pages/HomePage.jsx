@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import HeroSection from "../sections/HeroSection";
 import PopularDestinations from "../sections/PopularDestinations";
-import FeaturedPackages from "../sections/FeaturedPackages";
+import ContinentPackages from "../sections/ContinentPackages";
 import WhyChooseUs from "../sections/WhyChooseUs";
 import Testimonials from "../sections/Testimonials";
 import Newsletter from "../sections/Newsletter";
@@ -14,8 +14,8 @@ export default function HomePage() {
   return (
     <main>
       <HeroSection />
+      <ContinentPackages />
       <PopularDestinations />
-      <FeaturedPackages />
       <WhyChooseUs />
       <Testimonials />
       <Newsletter />

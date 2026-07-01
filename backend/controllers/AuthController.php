@@ -55,4 +55,56 @@ class AuthController
         }
         Response::success($user);
     }
+
+    public function updateProfile(array $body): void
+    {
+        $payload = AuthMiddleware::handle();
+        $id      = (int) $payload['id'];
+
+        $errors = ValidationMiddleware::validate($body, [
+            'name'  => 'required',
+            'email' => 'required|email',
+        ]);
+
+        if (isset($body['password']) && $body['password'] !== '') {
+            if (strlen($body['password']) < 6) {
+                $errors['password'] = 'Password must be at least 6 characters.';
+            }
+        }
+
+        if (!empty($errors)) {
+            Response::error('Validation failed.', 422, $errors);
+        }
+
+        $model = new AdminUserModel();
+        $user  = $model->findById($id);
+        if (!$user) {
+            Response::notFound('User not found.');
+        }
+
+        $email = Sanitizer::email($body['email']);
+        $existing = $model->findByEmail($email);
+        if ($existing && (int) $existing['id'] !== $id) {
+            Response::error('Email is already in use.', 422, ['email' => 'Email is already in use.']);
+        }
+
+        $updateData = [
+            'name'  => Sanitizer::string($body['name']),
+            'email' => $email,
+        ];
+
+        if (isset($body['password']) && $body['password'] !== '') {
+            $updateData['password_hash'] = password_hash($body['password'], PASSWORD_BCRYPT);
+        }
+
+        if (array_key_exists('avatar_url', $body)) {
+            $updateData['avatar_url'] = $body['avatar_url'] ? Sanitizer::string($body['avatar_url']) : null;
+        }
+
+        $model->update($id, $updateData);
+
+        $updatedUser = $model->findById($id);
+        Response::success($updatedUser, 'Profile updated successfully.');
+    }
 }
+

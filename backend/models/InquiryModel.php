@@ -43,22 +43,23 @@ class InquiryModel
     public function create(array $data): int
     {
         $stmt = $this->db->prepare(
-            'INSERT INTO inquiries (customer_name, customer_email, customer_phone, package_id, package_name,
+            'INSERT INTO inquiries (customer_name, customer_email, customer_phone, customer_country, package_id, package_name,
              travel_date, travellers, budget_range, message, status, type)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
         );
         $stmt->execute([
             $data['customer_name'],
             $data['customer_email'],
-            $data['customer_phone'] ?? null,
-            $data['package_id']     ?? null,
-            $data['package_name']   ?? null,
-            $data['travel_date']    ?? null,
-            $data['travellers']     ?? null,
-            $data['budget_range']   ?? null,
-            $data['message']        ?? null,
+            $data['customer_phone']   ?? null,
+            $data['customer_country'] ?? null,
+            $data['package_id']       ?? null,
+            $data['package_name']     ?? null,
+            $data['travel_date']      ?? null,
+            $data['travellers']       ?? null,
+            $data['budget_range']     ?? null,
+            $data['message']          ?? null,
             'New',
-            $data['type']           ?? 'package',
+            $data['type']             ?? 'package',
         ]);
         return (int) $this->db->lastInsertId();
     }

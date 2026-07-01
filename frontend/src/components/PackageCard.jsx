@@ -4,13 +4,13 @@ import { Clock, Star, Heart, ArrowRight, MapPin } from "lucide-react";
 import { useState } from "react";
 import { api, imageUrl } from "../api/api";
 
-export default function PackageCard({ pkg }) {
+export default function PackageCard({ pkg, showTag = true, showHighlights = true }) {
   const [wishlisted, setWishlisted] = useState(false);
   const imgSrc = imageUrl(pkg.image || pkg.cover_image);
 
   return (
     <motion.div whileHover={{ y: -6 }} transition={{ duration: 0.3 }}
-      className="bg-white rounded-3xl overflow-hidden shadow-md hover:shadow-xl transition-shadow group flex flex-col">
+      className="bg-white rounded-3xl overflow-hidden shadow-md hover:shadow-xl transition-shadow group flex flex-col flex-1 h-full w-full">
       <div className="relative overflow-hidden h-56 bg-teal-100 shrink-0">
         {imgSrc ? (
           <img src={imgSrc} alt={pkg.title}
@@ -22,7 +22,7 @@ export default function PackageCard({ pkg }) {
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
 
-        {pkg.tag && (
+        {showTag && pkg.tag && (
           <span className="absolute top-4 left-4 bg-amber-500 text-white text-xs font-bold px-3 py-1 rounded-full">
             {pkg.tag}
           </span>
@@ -49,11 +49,13 @@ export default function PackageCard({ pkg }) {
 
           <h3 className="font-bold text-gray-900 text-lg leading-tight">{pkg.title}</h3>
 
-          <div className="flex flex-wrap gap-1.5">
-            {(pkg.highlights ?? []).slice(0, 3).map(h => (
-              <span key={h} className="text-xs bg-teal-50 text-teal-700 px-2.5 py-1 rounded-full">{h}</span>
-            ))}
-          </div>
+          {showHighlights && (pkg.highlights ?? []).length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {(pkg.highlights ?? []).slice(0, 3).map(h => (
+                <span key={h} className="text-xs bg-teal-50 text-teal-700 px-2.5 py-1 rounded-full">{h}</span>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Bottom — rating + price, always at bottom */}

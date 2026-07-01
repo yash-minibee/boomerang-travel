@@ -15,7 +15,7 @@ class PackageModel
     public function count(array $filters = []): int
     {
         [$where, $params] = $this->buildWhere($filters);
-        $stmt = $this->db->prepare("SELECT COUNT(*) FROM packages WHERE deleted_at IS NULL {$where}");
+        $stmt = $this->db->prepare("SELECT COUNT(*) FROM packages p LEFT JOIN destinations d ON p.destination_id = d.id WHERE p.deleted_at IS NULL {$where}");
         $stmt->execute($params);
         return (int) $stmt->fetchColumn();
     }
@@ -32,12 +32,15 @@ class PackageModel
         $params[] = $offset;
 
         $stmt = $this->db->prepare(
-            "SELECT id, title, slug, category, destination_region, duration, starting_price,
-                    status, featured, rating, review_count, cover_image, tags, highlights,
-                    created_at, updated_at
-             FROM packages
-             WHERE deleted_at IS NULL {$where}
-             ORDER BY {$sort} {$order}
+            "SELECT p.id, p.title, p.slug, p.category, p.duration, p.starting_price,
+                    p.status, p.featured, p.rating, p.review_count, p.cover_image, p.tags, p.highlights,
+                    p.created_at, p.updated_at, p.destination_id,
+                    d.name AS destination_name,
+                    d.region AS destination_region
+             FROM packages p
+             LEFT JOIN destinations d ON p.destination_id = d.id
+             WHERE p.deleted_at IS NULL {$where}
+             ORDER BY p.{$sort} {$order}
              LIMIT ? OFFSET ?"
         );
         $stmt->execute($params);
@@ -47,7 +50,12 @@ class PackageModel
 
     public function findBySlug(string $slug): ?array
     {
-        $stmt = $this->db->prepare('SELECT * FROM packages WHERE slug = ? AND deleted_at IS NULL LIMIT 1');
+        $stmt = $this->db->prepare(
+            'SELECT p.*, d.name AS destination_name, d.region AS destination_region
+             FROM packages p
+             LEFT JOIN destinations d ON p.destination_id = d.id
+             WHERE p.slug = ? AND p.deleted_at IS NULL LIMIT 1'
+        );
         $stmt->execute([$slug]);
         $row = $stmt->fetch();
         return $row ? $this->decodeJson($row) : null;
@@ -55,7 +63,12 @@ class PackageModel
 
     public function findById(int $id): ?array
     {
-        $stmt = $this->db->prepare('SELECT * FROM packages WHERE id = ? AND deleted_at IS NULL LIMIT 1');
+        $stmt = $this->db->prepare(
+            'SELECT p.*, d.name AS destination_name, d.region AS destination_region
+             FROM packages p
+             LEFT JOIN destinations d ON p.destination_id = d.id
+             WHERE p.id = ? AND p.deleted_at IS NULL LIMIT 1'
+        );
         $stmt->execute([$id]);
         $row = $stmt->fetch();
         return $row ? $this->decodeJson($row) : null;
@@ -65,19 +78,21 @@ class PackageModel
     {
         $stmt = $this->db->prepare(
             'INSERT INTO packages
-             (title, slug, category, destination_region, duration, starting_price, status, featured,
+             (title, slug, category, destination_id, duration, starting_price, rating, review_count, status, featured,
               cover_image, gallery, highlights, tags, inclusions, exclusions,
               policy_cancellation, policy_refund, policy_payment,
               meta_title, meta_description, meta_keywords, created_by, updated_by)
-             VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
+             VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
         );
         $stmt->execute([
             $data['title'],
             $data['slug'],
             $data['category']           ?? null,
-            $data['destination_region'] ?? null,
+            $data['destination_id']     ?? null,
             $data['duration']           ?? null,
             $data['starting_price']     ?? 0,
+            $data['rating']             ?? 0,
+            $data['review_count']       ?? 0,
             $data['status']             ?? 'draft',
             $data['featured']           ?? 0,
             $data['cover_image']        ?? null,
@@ -103,7 +118,7 @@ class PackageModel
         $fields = [];
         $params = [];
 
-        $allowed = ['title', 'slug', 'category', 'destination_region', 'duration', 'starting_price',
+        $allowed = ['title', 'slug', 'category', 'destination_id', 'duration', 'starting_price', 'rating', 'review_count',
                     'status', 'featured', 'cover_image', 'gallery', 'highlights', 'tags',
                     'inclusions', 'exclusions', 'policy_cancellation', 'policy_refund', 'policy_payment',
                     'meta_title', 'meta_description', 'meta_keywords', 'updated_by'];
@@ -157,24 +172,24 @@ class PackageModel
         $params = [];
 
         if (!empty($filters['search'])) {
-            $where   .= ' AND (title LIKE ? OR destination_region LIKE ?)';
+            $where   .= ' AND (p.title LIKE ? OR d.region LIKE ?)';
             $params[] = '%' . $filters['search'] . '%';
             $params[] = '%' . $filters['search'] . '%';
         }
         if (!empty($filters['destination'])) {
-            $where   .= ' AND destination_region = ?';
+            $where   .= ' AND d.region = ?';
             $params[] = $filters['destination'];
         }
         if (!empty($filters['status'])) {
-            $where   .= ' AND status = ?';
+            $where   .= ' AND p.status = ?';
             $params[] = $filters['status'];
         }
         if (!empty($filters['category'])) {
-            $where   .= ' AND category = ?';
+            $where   .= ' AND p.category = ?';
             $params[] = $filters['category'];
         }
         if (isset($filters['featured']) && $filters['featured'] !== '') {
-            $where   .= ' AND featured = ?';
+            $where   .= ' AND p.featured = ?';
             $params[] = (int) $filters['featured'];
         }
 

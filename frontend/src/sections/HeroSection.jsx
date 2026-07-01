@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { Search, MapPin, Calendar, Users, ChevronDown } from "lucide-react";
 import { Link } from "react-router-dom";
+import usePageContent from "../hooks/usePageContent";
 
 const floatingCards = [
   { icon: "🌏", label: "50+ Destinations", sub: "Across 6 continents" },
@@ -9,6 +10,15 @@ const floatingCards = [
 ];
 
 export default function HeroSection() {
+  const defaultContent = {
+    hero_title_line1: "The World Awaits",
+    hero_title_line2: "Your Next Adventure",
+    hero_subtitle: "Luxury curated travel packages to the world's most breathtaking destinations.\nHandcrafted itineraries, seamless experiences, unforgettable memories.",
+    hero_badge: "✈️ Crafting Extraordinary Journeys Since 2010"
+  };
+
+  const { content } = usePageContent("home", defaultContent);
+
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       <div className="absolute inset-0">
@@ -30,20 +40,23 @@ export default function HeroSection() {
             transition={{ delay: 0.2 }}
             className="inline-block bg-white/10 backdrop-blur-sm border border-white/20 text-white text-sm font-medium px-5 py-2 rounded-full"
           >
-            ✈️ Crafting Extraordinary Journeys Since 2010
+            {content.hero_badge}
           </motion.span>
 
           <h1 className="text-4xl sm:text-5xl lg:text-7xl font-extrabold text-white leading-tight tracking-tight">
-            The World Awaits
-            <br />
-            <span className="bg-gradient-to-r from-amber-300 to-amber-500 bg-clip-text text-transparent">
-              Your Next Adventure
-            </span>
+            {content.hero_title_line1}
+            {content.hero_title_line2 && (
+              <>
+                <br />
+                <span className="bg-gradient-to-r from-amber-300 to-amber-500 bg-clip-text text-transparent">
+                  {content.hero_title_line2}
+                </span>
+              </>
+            )}
           </h1>
 
-          <p className="text-lg sm:text-xl text-teal-100 max-w-2xl mx-auto leading-relaxed">
-            Luxury curated travel packages to the world's most breathtaking destinations.
-            Handcrafted itineraries, seamless experiences, unforgettable memories.
+          <p className="text-lg sm:text-xl text-teal-100 max-w-2xl mx-auto leading-relaxed whitespace-pre-line">
+            {content.hero_subtitle}
           </p>
 
           {/* Search Box */}

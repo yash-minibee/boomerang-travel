@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, ChevronDown, Phone } from "lucide-react";
+import { useSettings } from "../context/SettingsContext";
 
 const destinationLinks = ["Europe", "Asia", "Americas", "Africa", "Middle East", "Islands"];
 
@@ -15,6 +16,7 @@ const navLinks = [
 ];
 
 export default function Navbar() {
+  const { settings } = useSettings();
   const [scrolled, setScrolled]   = useState(false);
   const [menuOpen, setMenuOpen]   = useState(false);
   const [openDrop, setOpenDrop]   = useState(null); // label of open dropdown
@@ -33,17 +35,17 @@ export default function Navbar() {
   return (
     <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isTransparent ? "bg-transparent" : "bg-white shadow-md"}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 lg:h-20">
+        <div className="flex items-center justify-between h-20 lg:h-24">
 
           {/* Logo */}
           <Link
             to="/"
-            className={`flex items-center rounded-xl transition-all duration-300 ${isTransparent ? "bg-black/30 backdrop-blur-sm px-3 py-1.5" : ""}`}
+            className={`flex items-center rounded-xl transition-all duration-300 ${isTransparent ? "bg-black/30 backdrop-blur-sm px-3 py-1 lg:py-1.5" : ""}`}
           >
             <img
               src="/logo.png"
               alt="Boomerang Travel"
-              className={`h-12 lg:h-14 w-auto object-contain transition-all duration-300 ${isTransparent ? "brightness-0 invert" : ""}`}
+              className={`h-[68px] lg:h-[80px] w-auto object-contain transition-all duration-300 ${isTransparent ? "brightness-0 invert" : ""}`}
             />
           </Link>
 
@@ -95,10 +97,10 @@ export default function Navbar() {
           {/* Right Actions */}
           <div className="hidden lg:flex items-center gap-4">
             <a
-              href="tel:+919876543210"
+              href={`tel:${(settings.phone || "").replace(/\s+/g, "")}`}
               className={`flex items-center gap-1.5 text-sm font-medium ${isTransparent ? "text-white" : "text-gray-700"}`}
             >
-              <Phone className="w-4 h-4" /> +91 98765 43210
+              <Phone className="w-4 h-4" /> {settings.phone}
             </a>
             <Link
               to="/contact"

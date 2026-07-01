@@ -70,4 +70,5 @@ export const api = {
   submitInquiry:     (data)        => post('inquiries.php', {}, data),
   submitTestimonial: (data)        => post('testimonials.php', {}, data),
   getContent:        (page)        => get('content.php', { page }),
+  getSettings:       ()            => get('settings.php'),
 };

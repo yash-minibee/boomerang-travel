@@ -9,7 +9,7 @@ import DeleteModal from "../components/ui/DeleteModal";
 import Pagination from "../components/ui/Pagination";
 import { packagesAPI, imageUrl } from "../api/api";
 
-const destinations = ["All", "Europe", "Asia", "Americas", "Africa", "Islands"];
+const destinations = ["All", "Asia", "Africa", "North America", "South America", "Antarctica", "Europe", "Australia/Oceania"];
 const statuses = ["All", "active", "draft"];
 
 export default function PackagesPage() {

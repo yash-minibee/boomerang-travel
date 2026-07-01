@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Phone, Mail, Calendar, Users, MessageSquare } from "lucide-react";
+import { X, Phone, Mail, Calendar, Users, MessageSquare, Globe, DollarSign } from "lucide-react";
 import PageHeader from "../components/ui/PageHeader";
 import SearchInput from "../components/ui/SearchInput";
 import StatusBadge from "../components/ui/StatusBadge";
@@ -133,9 +133,11 @@ export default function InquiriesPage() {
                   {[
                     { icon: Mail, label: "Email", value: selected.customer_email },
                     { icon: Phone, label: "Phone", value: selected.customer_phone || "—" },
+                    { icon: Globe, label: "Country of Residence", value: selected.customer_country || "—" },
                     { icon: Calendar, label: "Travel Date", value: selected.travel_date || "—" },
-                    { icon: Users, label: "Travellers", value: selected.travellers ? `${selected.travellers} Adults` : "—" },
-                    { icon: MessageSquare, label: "Package", value: selected.package_name || "—" },
+                    { icon: Users, label: "Travellers", value: selected.travellers ? `${selected.travellers} Travellers` : "—" },
+                    { icon: DollarSign, label: "Budget per Person", value: selected.budget_range || "—" },
+                    { icon: MessageSquare, label: "Destination / Package", value: selected.package_name || "—" },
                   ].map(({ icon: Icon, label, value }) => (
                     <div key={label} className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl">
                       <Icon className="w-4 h-4 text-teal-600 mt-0.5 shrink-0" />

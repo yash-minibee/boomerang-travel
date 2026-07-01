@@ -8,11 +8,10 @@ import AddPackagePage from "./pages/AddPackagePage";
 import DestinationsPage from "./pages/DestinationsPage";
 import AddDestinationPage from "./pages/AddDestinationPage";
 import InquiriesPage from "./pages/InquiriesPage";
-import CustomersPage from "./pages/CustomersPage";
 import TestimonialsPage from "./pages/TestimonialsPage";
-import MediaPage from "./pages/MediaPage";
 import ContentPage from "./pages/ContentPage";
 import SettingsPage from "./pages/SettingsPage";
+import ProfilePage from "./pages/ProfilePage";
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -40,14 +39,13 @@ function AppRoutes() {
         <Route path="/destinations/:id/edit" element={<AddDestinationPage />} />
         <Route path="/inquiries" element={<InquiriesPage />} />
         <Route path="/inquiries/custom" element={<InquiriesPage />} />
-        <Route path="/customers" element={<CustomersPage />} />
         <Route path="/testimonials" element={<TestimonialsPage />} />
-        <Route path="/media" element={<MediaPage />} />
         <Route path="/content/home" element={<ContentPage section="home" />} />
         <Route path="/content/about" element={<ContentPage section="about" />} />
         <Route path="/content/contact" element={<ContentPage section="contact" />} />
         <Route path="/settings" element={<SettingsPage />} />
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="*" element={<Navigate to="/  dashboard" replace />} />
       </Route>
     </Routes>
   );

@@ -6,10 +6,21 @@ class InquiryController
 {
     public function store(array $body): void
     {
-        $errors = ValidationMiddleware::validate($body, [
+        $type = $body['type'] ?? 'package';
+        $rules = [
             'customer_name'  => 'required|min:2',
             'customer_email' => 'required|email',
-        ]);
+        ];
+
+        if ($type === 'custom') {
+            $rules['customer_country'] = 'required';
+            $rules['customer_phone']   = 'required';
+            $rules['package_name']     = 'required';
+            $rules['travel_date']      = 'required';
+            $rules['travellers']       = 'required';
+        }
+
+        $errors = ValidationMiddleware::validate($body, $rules);
         if (!empty($errors)) {
             Response::error('Validation failed.', 422, $errors);
         }

@@ -104,7 +104,7 @@ class DestinationModel
         $stmt = $this->db->prepare(
             "UPDATE destinations SET package_count = (
                 SELECT COUNT(*) FROM packages
-                WHERE packages.destination_region = destinations.region
+                WHERE packages.destination_id = destinations.id
                 AND packages.deleted_at IS NULL
             )"
         );

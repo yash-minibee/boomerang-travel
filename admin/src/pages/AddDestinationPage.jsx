@@ -110,7 +110,7 @@ export default function AddDestinationPage() {
             value={form.country} onChange={e => updateForm("country", e.target.value)} />
 
           <FormSelect label="Region" value={form.region} onChange={e => updateForm("region", e.target.value)}>
-            {["Europe", "Asia", "Americas", "Africa", "Islands", "Middle East"].map(r => <option key={r}>{r}</option>)}
+            {["Asia", "Africa", "North America", "South America", "Antarctica", "Europe", "Australia/Oceania"].map(r => <option key={r}>{r}</option>)}
           </FormSelect>
 
           <FormSelect label="Featured" value={form.featured} onChange={e => updateForm("featured", e.target.value)}>

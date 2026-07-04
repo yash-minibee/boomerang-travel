@@ -62,7 +62,7 @@ export default function HeroSection() {
           {/* Search Box */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} className="max-w-4xl mx-auto mt-8">
             <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-3">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
                 <div className="flex items-center gap-3 bg-white rounded-2xl px-4 py-3">
                   <MapPin className="w-5 h-5 text-amber-500 shrink-0" />
                   <div>
@@ -86,12 +86,18 @@ export default function HeroSection() {
                 <div className="flex items-center gap-3 bg-white rounded-2xl px-4 py-3">
                   <Users className="w-5 h-5 text-amber-500 shrink-0" />
                   <div>
-                    <div className="text-xs text-gray-400 font-medium">Travellers</div>
+                    <div className="text-xs text-gray-400 font-medium">Adults</div>
                     <select className="text-sm font-semibold text-gray-800 bg-transparent outline-none w-full cursor-pointer">
-                      <option>2 Adults</option>
-                      <option>1 Adult</option>
-                      <option>3 Adults</option>
-                      <option>Family (4)</option>
+                      {[1, 2, 3, 4, 5, 6, "7+"].map(n => <option key={n} value={n}>{n} {n === 1 ? "Adult" : "Adults"}</option>)}
+                    </select>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 bg-white rounded-2xl px-4 py-3">
+                  <Users className="w-5 h-5 text-amber-500 shrink-0" />
+                  <div>
+                    <div className="text-xs text-gray-400 font-medium">Children</div>
+                    <select className="text-sm font-semibold text-gray-800 bg-transparent outline-none w-full cursor-pointer">
+                      {[0, 1, 2, 3, 4, 5, "6+"].map(n => <option key={n} value={n}>{n} {n === 1 ? "Child" : "Children"}</option>)}
                     </select>
                   </div>
                 </div>

@@ -7,8 +7,8 @@ export default defineConfig({
   base: process.env.VITE_BASE_PATH || "/",
   server: {
     proxy: {
-      // /backend/api/* → PHP built-in server running from project root
-      '/backend/api': {
+      // /boomerangglobaltravels-backend/api/* → PHP built-in server running from project root
+      '/boomerangglobaltravels-backend/api': {
         target: 'http://localhost:8000',
         changeOrigin: true,
       },

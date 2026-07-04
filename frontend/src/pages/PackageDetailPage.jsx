@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Clock, Star, MapPin, Check, X, ChevronDown, ChevronUp,
   ChevronLeft, ChevronRight, Phone, Mail, Calendar, Users,
-  Utensils, Activity, MessageCircle, ArrowRight
+  Utensils, Activity, MessageCircle, ArrowRight, Maximize2
 } from "lucide-react";
 import PackageCard from "../components/PackageCard";
 import { api, imageUrl } from "../api/api";
@@ -30,10 +30,12 @@ export default function PackageDetailPage() {
   const [related, setRelated] = useState([]);
   const [activeImg, setActiveImg] = useState(0);
   const [activeAccordion, setActiveAccordion] = useState(null);
-  const [form, setForm] = useState({ name: "", email: "", phone: "", date: "", travellers: "2", message: "" });
+  const [form, setForm] = useState({ name: "", email: "", phone: "", date: "", travellers: "2", children: "0", message: "" });
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
 
   useEffect(() => { window.scrollTo(0, 0); setActiveImg(0); }, [slug]);
 
@@ -63,6 +65,7 @@ export default function PackageDetailPage() {
         customer_phone: form.phone,
         travel_date: form.date,
         travellers: form.travellers,
+        children: form.children,
         message: form.message,
         package_name: pkg?.title,
         package_id: pkg?.id,
@@ -76,6 +79,39 @@ export default function PackageDetailPage() {
     }
   };
 
+  // Build gallery — resolve all URLs, fallback to cover image
+  const gallery = pkg
+    ? (pkg.gallery?.length ? pkg.gallery : pkg.image ? [pkg.image] : []).map(imageUrl).filter(Boolean)
+    : [];
+
+  // Lock background scroll when lightbox is open
+  useEffect(() => {
+    if (isLightboxOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isLightboxOpen]);
+
+  // Handle keyboard navigation for the lightbox
+  useEffect(() => {
+    if (!isLightboxOpen) return;
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        setIsLightboxOpen(false);
+      } else if (e.key === "ArrowLeft") {
+        setLightboxIndex((prev) => (prev - 1 + gallery.length) % gallery.length);
+      } else if (e.key === "ArrowRight") {
+        setLightboxIndex((prev) => (prev + 1) % gallery.length);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isLightboxOpen, gallery.length]);
+
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center bg-stone-50 pt-20 lg:pt-24">
       <div className="w-10 h-10 border-4 border-teal-600 border-t-transparent rounded-full animate-spin" />
@@ -83,10 +119,6 @@ export default function PackageDetailPage() {
   );
 
   if (!pkg) return null;
-
-  // Build gallery — resolve all URLs, fallback to cover image
-  const gallery = (pkg.gallery?.length ? pkg.gallery : pkg.image ? [pkg.image] : [])
-    .map(imageUrl).filter(Boolean);
 
   // Only show policies that have content
   const policies = [
@@ -102,55 +134,70 @@ export default function PackageDetailPage() {
     <div className="min-h-screen bg-stone-50 pt-20 lg:pt-24">
 
       {/* ── Hero Gallery ────────────────────────────────────────── */}
-      <div className="relative h-[55vh] lg:h-[65vh] overflow-hidden bg-teal-950">
+      <div className="relative h-[55vh] lg:h-[65vh] overflow-hidden bg-teal-950 group/gallery">
         {gallery.length > 0 ? (
-          <AnimatePresence mode="wait">
-            <motion.img
-              key={activeImg}
-              src={gallery[activeImg]}
-              alt={pkg.title}
-              initial={{ opacity: 0, scale: 1.05 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.6 }}
-              className="w-full h-full object-cover"
-            />
-          </AnimatePresence>
+          <div
+            onClick={() => {
+              setLightboxIndex(activeImg);
+              setIsLightboxOpen(true);
+            }}
+            className="w-full h-full cursor-zoom-in relative"
+          >
+            <AnimatePresence mode="wait">
+              <motion.img
+                key={activeImg}
+                src={gallery[activeImg]}
+                alt={pkg.title}
+                initial={{ opacity: 0, scale: 1.05 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.6 }}
+                className="w-full h-full object-cover"
+              />
+            </AnimatePresence>
+            {/* Hover overlay with zoom icon */}
+            <div className="absolute inset-0 bg-black/25 opacity-0 group-hover/gallery:opacity-100 transition-opacity duration-300 flex items-center justify-center pointer-events-none">
+              <div className="bg-black/60 backdrop-blur-md px-5 py-2.5 rounded-full text-white text-sm font-semibold flex items-center gap-2 transform translate-y-3 group-hover/gallery:translate-y-0 transition-transform duration-300 shadow-lg">
+                <Maximize2 className="w-4 h-4 text-amber-400" />
+                <span>View Full Screen</span>
+              </div>
+            </div>
+          </div>
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-teal-800 to-teal-950" />
         )}
 
-        <div className="absolute inset-0 bg-gradient-to-t from-teal-950/80 via-teal-900/20 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-teal-950/80 via-teal-900/20 to-transparent pointer-events-none" />
 
         {gallery.length > 1 && (
           <>
             <button onClick={() => setActiveImg(i => (i - 1 + gallery.length) % gallery.length)}
-              className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/40 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-amber-500/80 transition-colors">
+              className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/40 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-amber-500/80 transition-colors z-10 cursor-pointer">
               <ChevronLeft className="w-5 h-5" />
             </button>
             <button onClick={() => setActiveImg(i => (i + 1) % gallery.length)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/40 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-amber-500/80 transition-colors">
+              className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/40 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-amber-500/80 transition-colors z-10 cursor-pointer">
               <ChevronRight className="w-5 h-5" />
             </button>
-            <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex gap-2">
+            <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex gap-2 z-10">
               {gallery.map((_, i) => (
                 <button key={i} onClick={() => setActiveImg(i)}
-                  className={`rounded-full transition-all ${i === activeImg ? "w-6 h-2.5 bg-amber-400" : "w-2.5 h-2.5 bg-white/50"}`} />
+                  className={`rounded-full transition-all cursor-pointer ${i === activeImg ? "w-6 h-2.5 bg-amber-400" : "w-2.5 h-2.5 bg-white/50"}`} />
               ))}
             </div>
           </>
         )}
 
-        <div className="absolute bottom-0 left-0 right-0 p-6 lg:p-10">
-          <nav className="text-white/60 text-xs mb-3 flex items-center gap-1.5">
+        <div className="absolute bottom-0 left-0 right-0 p-6 lg:p-10 pointer-events-none z-10">
+          <nav className="text-white/60 text-xs mb-3 flex items-center gap-1.5 pointer-events-auto">
             <Link to="/" className="hover:text-amber-300">Home</Link>
             <span>/</span>
             <Link to="/packages" className="hover:text-amber-300">Packages</Link>
             <span>/</span>
             <span className="text-white">{pkg.title}</span>
           </nav>
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white leading-tight">{pkg.title}</h1>
-          <div className="flex flex-wrap items-center gap-4 mt-3">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white leading-tight pointer-events-auto">{pkg.title}</h1>
+          <div className="flex flex-wrap items-center gap-4 mt-3 pointer-events-auto">
             <div className="flex items-center gap-1.5 text-white/80 text-sm"><Clock className="w-4 h-4" /> {pkg.duration}</div>
             <div className="flex items-center gap-1 text-amber-400 text-sm">
               <Star className="w-4 h-4 fill-current" />
@@ -426,16 +473,23 @@ export default function PackageDetailPage() {
                           <input name="phone" value={form.phone} onChange={handleFormChange} placeholder="+91..."
                             className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-teal-300" />
                         </div>
-                        <div>
+                        <div className="col-span-2">
                           <label className="text-xs text-gray-500 font-medium mb-1.5 block">Travel Date</label>
                           <input type="date" name="date" value={form.date} onChange={handleFormChange}
                             className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-teal-300" />
                         </div>
                         <div>
-                          <label className="text-xs text-gray-500 font-medium mb-1.5 block">Travellers</label>
+                          <label className="text-xs text-gray-500 font-medium mb-1.5 block">Adults *</label>
                           <select name="travellers" value={form.travellers} onChange={handleFormChange}
                             className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-teal-300">
                             {[1, 2, 3, 4, 5, 6, "7+"].map(n => <option key={n} value={n}>{n} {n === 1 ? "Adult" : "Adults"}</option>)}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-xs text-gray-500 font-medium mb-1.5 block">Children</label>
+                          <select name="children" value={form.children} onChange={handleFormChange}
+                            className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-teal-300">
+                            {[0, 1, 2, 3, 4, 5, "6+"].map(n => <option key={n} value={n}>{n} {n === 1 ? "Child" : "Children"}</option>)}
                           </select>
                         </div>
                         <div className="col-span-2">
@@ -476,6 +530,107 @@ export default function PackageDetailPage() {
           </section>
         )}
       </div>
+
+      {/* ── Full-Screen Lightbox Gallery ──────────────────────── */}
+      <AnimatePresence>
+        {isLightboxOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="fixed inset-0 z-50 flex flex-col bg-black/95 backdrop-blur-md select-none"
+            onClick={() => setIsLightboxOpen(false)}
+          >
+            {/* Top Bar: Close Button & Image Counter */}
+            <div className="flex items-center justify-between p-4 md:p-6 text-white z-10">
+              <div className="text-sm font-medium tracking-wide bg-black/30 px-3 py-1.5 rounded-full backdrop-blur-sm">
+                {lightboxIndex + 1} / {gallery.length}
+              </div>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsLightboxOpen(false);
+                }}
+                className="w-10 h-10 rounded-full bg-white/10 hover:bg-red-500 hover:scale-105 active:scale-95 flex items-center justify-center text-white transition-all cursor-pointer"
+                aria-label="Close Gallery"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Main Image Container */}
+            <div className="flex-1 flex items-center justify-center relative px-4 md:px-16 min-h-0">
+              {/* Previous Button */}
+              {gallery.length > 1 && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setLightboxIndex((i) => (i - 1 + gallery.length) % gallery.length);
+                  }}
+                  className="absolute left-4 md:left-8 w-12 h-12 rounded-full bg-white/10 hover:bg-amber-500 hover:scale-105 active:scale-95 flex items-center justify-center text-white transition-all cursor-pointer z-10"
+                  aria-label="Previous Image"
+                >
+                  <ChevronLeft className="w-6 h-6" />
+                </button>
+              )}
+
+              {/* Active Image */}
+              <AnimatePresence mode="wait">
+                <motion.img
+                  key={lightboxIndex}
+                  src={gallery[lightboxIndex]}
+                  alt={`${pkg.title} - Full Screen Gallery Image`}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.25 }}
+                  className="max-h-[70vh] max-w-[90vw] md:max-h-[78vh] object-contain rounded-lg shadow-2xl pointer-events-auto"
+                  onClick={(e) => e.stopPropagation()} // Prevent closing when clicking the image
+                />
+              </AnimatePresence>
+
+              {/* Next Button */}
+              {gallery.length > 1 && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setLightboxIndex((i) => (i + 1) % gallery.length);
+                  }}
+                  className="absolute right-4 md:right-8 w-12 h-12 rounded-full bg-white/10 hover:bg-amber-500 hover:scale-105 active:scale-95 flex items-center justify-center text-white transition-all cursor-pointer z-10"
+                  aria-label="Next Image"
+                >
+                  <ChevronRight className="w-6 h-6" />
+                </button>
+              )}
+            </div>
+
+            {/* Bottom Thumbnail Strip */}
+            {gallery.length > 1 && (
+              <div
+                className="p-4 md:p-6 bg-black/40 backdrop-blur-sm border-t border-white/10 z-10 pointer-events-auto overflow-x-auto flex justify-center gap-2 max-w-full"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex gap-2 max-w-full overflow-x-auto py-1 px-2">
+                  {gallery.map((img, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setLightboxIndex(idx)}
+                      className={`relative shrink-0 w-16 h-12 md:w-20 md:h-14 rounded-lg overflow-hidden border-2 transition-all duration-200 focus:outline-none cursor-pointer ${
+                        idx === lightboxIndex
+                          ? "border-amber-400 scale-105 opacity-100 shadow-md shadow-amber-400/25"
+                          : "border-transparent opacity-50 hover:opacity-80"
+                      }`}
+                    >
+                      <img src={img} alt={`Thumbnail ${idx + 1}`} className="w-full h-full object-cover" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

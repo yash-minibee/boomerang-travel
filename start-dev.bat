@@ -7,7 +7,7 @@ start "Frontend :5173"    cmd /k "cd frontend && npm run dev"
 start "Admin :5174"       cmd /k "cd admin && npm run dev"
 
 echo.
-echo PHP Backend  → http://localhost:8000/backend/api/packages.php
+echo PHP Backend  → http://localhost:8000/boomerangglobaltravels-backend/api/packages.php
 echo Frontend     → http://localhost:5173
 echo Admin        → http://localhost:5174
 echo.

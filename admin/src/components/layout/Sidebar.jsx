@@ -102,18 +102,12 @@ export default function Sidebar({ mobileOpen, onClose }) {
   const content = (
     <div className="h-full flex flex-col bg-teal-950">
       {/* Logo */}
-      <div className="p-5 border-b border-teal-800 flex items-center justify-between">
-        <Link to="/dashboard" onClick={onClose} className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl gradient-bg flex items-center justify-center shrink-0">
-            <Compass className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <div className="text-white font-bold text-sm leading-tight">Boomerang</div>
-            <div className="text-teal-400 text-xs">Admin Panel</div>
-          </div>
+      <div className="py-2.5 px-4 border-b border-teal-800 flex items-center justify-center relative">
+        <Link to="/dashboard" onClick={onClose} className="flex items-center justify-center w-full">
+          <img src={`${import.meta.env.BASE_URL}logo.png`} alt="Boomerang Travel" className="h-16 w-auto object-contain brightness-0 invert" />
         </Link>
         {mobileOpen !== undefined && (
-          <button onClick={onClose} className="lg:hidden text-teal-400 hover:text-white">
+          <button onClick={onClose} className="absolute right-4 top-1/2 -translate-y-1/2 lg:hidden text-teal-400 hover:text-white">
             <X className="w-5 h-5" />
           </button>
         )}

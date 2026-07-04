@@ -34,13 +34,24 @@ const faqs = [
 
 export default function ContactPage() {
   const { settings } = useSettings();
-  const [form, setForm] = useState({ name: "", country: "", email: "", phone: "", destination: "", date: "", travellers: "", budget: "", message: "" });
+  const [form, setForm] = useState({ name: "", country: "", email: "", phone: "", destination: "", date: "", travellers: "", children: "0", budget: "", message: "" });
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [openFaq, setOpenFaq] = useState(null);
 
-  useEffect(() => { window.scrollTo(0, 0); }, []);
+  const [destinations, setDestinations] = useState([]);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    api.getDestinations()
+      .then(res => {
+        if (res && res.data) {
+          setDestinations(res.data);
+        }
+      })
+      .catch(err => console.warn("Failed to load destinations for contact page:", err));
+  }, []);
 
   const defaultContent = {
     contact_title: "Plan Your Dream Trip",
@@ -54,11 +65,11 @@ export default function ContactPage() {
   const { content } = usePageContent("contact", defaultContent);
 
   const contactInfoList = [
-    { icon: Phone, label: "Call Us", value: settings.phone, href: `tel:${(settings.phone || "").replace(/\s+/g, '')}`, color: "from-teal-500 to-teal-700" },
-    { icon: Mail, label: "Email Us", value: settings.email, href: `mailto:${settings.email}`, color: "from-amber-400 to-amber-600" },
-    { icon: MapPin, label: "Visit Us", value: settings.address, href: "#", color: "from-teal-600 to-teal-800" },
+    { icon: Phone, label: "Call Us", value: content.phone, href: `tel:${(content.phone || "").replace(/\s+/g, '')}`, color: "from-teal-500 to-teal-700" },
+    { icon: Mail, label: "Email Us", value: content.email, href: `mailto:${content.email}`, color: "from-amber-400 to-amber-600" },
+    { icon: MapPin, label: "Visit Us", value: content.address, href: "#", color: "from-teal-600 to-teal-800" },
     { icon: Clock, label: "Office Hours", value: content.office_hours, href: "#", color: "from-amber-500 to-amber-700" },
-  ];
+  ].filter(c => c.value && c.value.trim() !== "");
 
   const handleChange = e => setForm(f => ({ ...f, [e.target.name]: e.target.value }));
 
@@ -75,6 +86,7 @@ export default function ContactPage() {
         package_name: form.destination,
         travel_date: form.date,
         travellers: form.travellers,
+        children: form.children,
         budget_range: form.budget,
         message: form.message,
         type: "custom",
@@ -155,20 +167,35 @@ export default function ContactPage() {
                     </div>
                     <div>
                       <label className="text-xs font-semibold text-gray-500 block mb-1.5">Dream Destination *</label>
-                      <input required name="destination" value={form.destination} onChange={handleChange} placeholder="e.g. Bali, Europe, Japan..." className={inputClass} />
+                      {destinations.length > 0 ? (
+                        <select required name="destination" value={form.destination} onChange={handleChange} className={inputClass}>
+                          <option value="">Select your dream destination</option>
+                          {destinations.map(d => (
+                            <option key={d.id} value={d.name}>{d.name}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <input required name="destination" value={form.destination} onChange={handleChange} placeholder="e.g. Bali, Europe, Japan..." className={inputClass} />
+                      )}
                     </div>
                     <div>
                       <label className="text-xs font-semibold text-gray-500 block mb-1.5">Travel Date *</label>
                       <input required type="date" name="date" value={form.date} onChange={handleChange} className={inputClass} />
                     </div>
                     <div>
-                      <label className="text-xs font-semibold text-gray-500 block mb-1.5">No. of Travellers *</label>
+                      <label className="text-xs font-semibold text-gray-500 block mb-1.5">No. of Adults *</label>
                       <select required name="travellers" value={form.travellers} onChange={handleChange} className={inputClass}>
-                        <option value="">Select number of travellers</option>
-                        {[1, 2, 3, 4, 5, 6, "7+"].map(n => <option key={n} value={n}>{n} {n === 1 ? "Traveller" : "Travellers"}</option>)}
+                        <option value="">Select number of adults</option>
+                        {[1, 2, 3, 4, 5, 6, "7+"].map(n => <option key={n} value={n}>{n} {n === 1 ? "Adult" : "Adults"}</option>)}
                       </select>
                     </div>
                     <div>
+                      <label className="text-xs font-semibold text-gray-500 block mb-1.5">No. of Children</label>
+                      <select name="children" value={form.children} onChange={handleChange} className={inputClass}>
+                        {[0, 1, 2, 3, 4, 5, "6+"].map(n => <option key={n} value={n}>{n} {n === 1 ? "Child" : "Children"}</option>)}
+                      </select>
+                    </div>
+                    <div className="sm:col-span-2">
                       <label className="text-xs font-semibold text-gray-500 block mb-1.5">Budget per Person</label>
                       <select name="budget" value={form.budget} onChange={handleChange} className={inputClass}>
                         <option value="">Select budget range</option>

@@ -1,17 +1,17 @@
 // Base points to your hosting folder containing the /api/*.php files
-// e.g. https://ldvevents.site/backend/api
-const BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000/backend/api';
+// e.g. https://ldvevents.site/boomerangglobaltravels-backend/api
+const BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000/boomerangglobaltravels-backend/api';
 
 // Root URL for uploaded files.
-// VITE_UPLOADS_URL should point to wherever the backend/uploads folder is served from.
-// e.g.  https://ldvevents.site/backend/uploads  (production on Hostinger)
-//       http://localhost:8000/backend/uploads    (local dev)
-const UPLOADS_URL = (import.meta.env.VITE_UPLOADS_URL || 'http://localhost:8000/backend/uploads').replace(/\/$/, '');
+// VITE_UPLOADS_URL should point to wherever the boomerangglobaltravels-backend/uploads folder is served from.
+// e.g.  https://ldvevents.site/boomerangglobaltravels-backend/uploads  (production on Hostinger)
+//       http://localhost:8000/boomerangglobaltravels-backend/uploads    (local dev)
+const UPLOADS_URL = (import.meta.env.VITE_UPLOADS_URL || 'http://localhost:8000/boomerangglobaltravels-backend/uploads').replace(/\/$/, '');
 
 /**
  * Convert any image path stored in the DB into a full URL.
  * DB may contain any of:
- *   /backend/uploads/packages/file.jpg   (new relative format)
+ *   /boomerangglobaltravels-backend/uploads/packages/file.jpg   (new relative format)
  *   uploads/packages/file.jpg            (bare relative)
  *   http://localhost:8000/uploads/...    (old absolute localhost)
  *   https://any-cdn/...                  (external URL — pass through)
@@ -29,10 +29,10 @@ export function imageUrl(path) {
   path = path.replace(/^https?:\/\/[^/]+/, '');
 
   // Normalise to just the uploads-relative part
-  // e.g. /backend/uploads/packages/file.jpg → packages/file.jpg
+  // e.g. /boomerangglobaltravels-backend/uploads/packages/file.jpg → packages/file.jpg
   //      /uploads/packages/file.jpg         → packages/file.jpg
   //      uploads/packages/file.jpg          → packages/file.jpg
-  path = path.replace(/^\/?backend\/uploads\//, '');
+  path = path.replace(/^\/?(?:boomerangglobaltravels-backend|backend)\/uploads\//, '');
   path = path.replace(/^\/?uploads\//, '');
   path = path.replace(/^\//, '');
 

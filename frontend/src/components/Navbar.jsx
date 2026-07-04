@@ -4,7 +4,15 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, ChevronDown, Phone } from "lucide-react";
 import { useSettings } from "../context/SettingsContext";
 
-const destinationLinks = ["Europe", "Asia", "Americas", "Africa", "Middle East", "Islands"];
+const destinationLinks = [
+  "Asia",
+  "Africa",
+  "North America",
+  "South America",
+  "Antarctica",
+  "Europe",
+  "Australia/Oceania/Pacific"
+];
 
 const navLinks = [
   { label: "Explore Destinations", to: "/packages", dropdown: destinationLinks },

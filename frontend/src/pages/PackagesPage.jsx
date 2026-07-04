@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { SlidersHorizontal, X } from "lucide-react";
+import { SlidersHorizontal, X, ChevronLeft, ChevronRight } from "lucide-react";
 import PackageCard from "../components/PackageCard";
 import { api, imageUrl } from "../api/api";
 
@@ -34,6 +34,18 @@ export default function PackagesPage() {
   const [budget, setBudget] = useState(10000);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 9;
+
+  // Reset page when any search/filter criteria change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, destination, style, duration, budget]);
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 320, behavior: "smooth" });
+  };
 
   // Sync state with URL search params changes
   useEffect(() => {
@@ -71,7 +83,15 @@ export default function PackagesPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  const SidebarContent = () => (
+  const totalPages = Math.ceil(packages.length / ITEMS_PER_PAGE);
+  const paginatedPackages = packages.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+  const startIndex = packages.length > 0 ? (currentPage - 1) * ITEMS_PER_PAGE + 1 : 0;
+  const endIndex = Math.min(currentPage * ITEMS_PER_PAGE, packages.length);
+
+  const renderSidebarContent = () => (
     <div className="space-y-7">
       <div>
         <h3 className="font-bold text-gray-800 text-sm mb-3">Search</h3>
@@ -81,7 +101,7 @@ export default function PackagesPage() {
       <div>
         <h3 className="font-bold text-gray-800 text-sm mb-3">Destination</h3>
         <div className="space-y-2">
-          {["All", "Asia", "Africa", "North America", "South America", "Antarctica", "Europe", "Australia/Oceania"].map(d => (
+          {["All", "Asia", "Africa", "North America", "South America", "Antarctica", "Europe", "Australia/Oceania/Pacific"].map(d => (
             <label key={d} className="flex items-center gap-2.5 cursor-pointer">
               <input type="radio" name="destination" value={d} checked={destination === d} onChange={() => {
                 setDestination(d);
@@ -157,19 +177,19 @@ export default function PackagesPage() {
               <h2 className="font-extrabold text-gray-900 text-base mb-6 flex items-center gap-2">
                 <SlidersHorizontal className="w-5 h-5 text-teal-600" /> Filters
               </h2>
-              <SidebarContent />
+              {renderSidebarContent()}
             </div>
           </aside>
 
           <main className="flex-1">
             <div className="flex lg:hidden items-center justify-between mb-5">
-              <p className="text-gray-500 text-sm">{total} packages found</p>
-              <button onClick={() => setSidebarOpen(true)} className="flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-xl text-sm font-medium shadow-sm">
+              <p className="text-gray-500 text-sm">{startIndex}–{endIndex} of {packages.length} packages</p>
+              <button onClick={() => setSidebarOpen(true)} className="flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-xl text-sm font-medium shadow-sm cursor-pointer">
                 <SlidersHorizontal className="w-4 h-4" /> Filters
               </button>
             </div>
             <p className="hidden lg:block text-gray-500 text-sm mb-6">
-              Showing <span className="font-bold text-gray-800">{total}</span> packages
+              Showing <span className="font-bold text-gray-800">{startIndex}–{endIndex}</span> of <span className="font-bold text-gray-800">{packages.length}</span> packages
             </p>
 
             {loading ? (
@@ -181,9 +201,51 @@ export default function PackagesPage() {
                 <p className="text-gray-400 mt-2">Try adjusting your filters</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-                {packages.map(pkg => <PackageCard key={pkg.id} pkg={pkg} />)}
-              </div>
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {paginatedPackages.map(pkg => <PackageCard key={pkg.id} pkg={pkg} />)}
+                </div>
+
+                {/* Pagination Controls */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-center gap-2 mt-12 pb-6">
+                    <button
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={currentPage === 1}
+                      className="w-10 h-10 rounded-xl border border-gray-200 bg-white flex items-center justify-center text-gray-600 hover:bg-teal-50 hover:text-teal-700 hover:border-teal-300 transition-all disabled:opacity-40 disabled:hover:bg-white disabled:hover:text-gray-600 disabled:hover:border-gray-200 cursor-pointer disabled:cursor-not-allowed shadow-xs"
+                      aria-label="Previous Page"
+                    >
+                      <ChevronLeft className="w-5 h-5" />
+                    </button>
+
+                    {Array.from({ length: totalPages }, (_, idx) => {
+                      const pageNum = idx + 1;
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => handlePageChange(pageNum)}
+                          className={`w-10 h-10 rounded-xl text-sm font-semibold transition-all cursor-pointer shadow-xs ${
+                            currentPage === pageNum
+                              ? "bg-teal-600 text-white shadow-md shadow-teal-600/20"
+                              : "border border-gray-200 bg-white text-gray-600 hover:bg-teal-50 hover:text-teal-700 hover:border-teal-300"
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })}
+
+                    <button
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                      className="w-10 h-10 rounded-xl border border-gray-200 bg-white flex items-center justify-center text-gray-600 hover:bg-teal-50 hover:text-teal-700 hover:border-teal-300 transition-all disabled:opacity-40 disabled:hover:bg-white disabled:hover:text-gray-600 disabled:hover:border-gray-200 cursor-pointer disabled:cursor-not-allowed shadow-xs"
+                      aria-label="Next Page"
+                    >
+                      <ChevronRight className="w-5 h-5" />
+                    </button>
+                  </div>
+                )}
+              </>
             )}
           </main>
         </div>
@@ -199,7 +261,7 @@ export default function PackagesPage() {
               </h2>
               <button onClick={() => setSidebarOpen(false)}><X className="w-5 h-5 text-gray-500" /></button>
             </div>
-            <SidebarContent />
+            {renderSidebarContent()}
           </motion.div>
         </div>
       )}

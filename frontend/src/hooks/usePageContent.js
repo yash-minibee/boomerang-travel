@@ -13,7 +13,7 @@ export default function usePageContent(pageName, defaultContent) {
           // Merge API content with default content
           const merged = { ...defaultContent };
           Object.keys(res.data).forEach(key => {
-            if (res.data[key] !== null && res.data[key] !== undefined && res.data[key] !== "") {
+            if (res.data[key] !== null && res.data[key] !== undefined) {
               merged[key] = res.data[key];
             }
           });

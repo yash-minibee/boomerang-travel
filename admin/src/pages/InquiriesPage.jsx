@@ -88,7 +88,10 @@ export default function InquiriesPage() {
                   </td>
                   <td className="px-5 py-4 text-sm text-gray-600 max-w-[160px] truncate">{inq.package_name}</td>
                   <td className="px-5 py-4 text-sm text-gray-500">{inq.travel_date ?? "—"}</td>
-                  <td className="px-5 py-4 text-sm text-gray-500">{inq.travellers ?? "—"}</td>
+                  <td className="px-5 py-4 text-sm text-gray-500">
+                    {inq.travellers ?? 0} {inq.travellers === 1 ? "Adult" : "Adults"}
+                    {inq.children > 0 ? `, ${inq.children} ${inq.children === 1 ? "Child" : "Children"}` : ""}
+                  </td>
                   <td className="px-5 py-4"><StatusBadge status={inq.status} /></td>
                   <td className="px-5 py-4">
                     <button onClick={() => setSelected(inq)} className="text-xs text-teal-600 font-semibold hover:text-teal-700 border border-teal-200 hover:border-teal-400 px-3 py-1.5 rounded-lg transition-colors">
@@ -135,7 +138,7 @@ export default function InquiriesPage() {
                     { icon: Phone, label: "Phone", value: selected.customer_phone || "—" },
                     { icon: Globe, label: "Country of Residence", value: selected.customer_country || "—" },
                     { icon: Calendar, label: "Travel Date", value: selected.travel_date || "—" },
-                    { icon: Users, label: "Travellers", value: selected.travellers ? `${selected.travellers} Travellers` : "—" },
+                    { icon: Users, label: "Travellers", value: selected.travellers ? `${selected.travellers} ${selected.travellers === 1 ? "Adult" : "Adults"}${selected.children ? `, ${selected.children} ${selected.children === 1 ? "Child" : "Children"}` : ""}` : "—" },
                     { icon: DollarSign, label: "Budget per Person", value: selected.budget_range || "—" },
                     { icon: MessageSquare, label: "Destination / Package", value: selected.package_name || "—" },
                   ].map(({ icon: Icon, label, value }) => (

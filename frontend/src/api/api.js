@@ -66,9 +66,13 @@ export const api = {
   getPackages:       (params = {}) => get('packages.php', params),
   getPackage:        (slug)        => get('packages.php', { slug }),
   getDestinations:   (params = {}) => get('destinations.php', params),
+  getCruises:            (params = {}) => get('cruises.php', params),
+  getCruise:             (slug)        => get('cruises.php', { slug }),
+  getCruiseDestinations: (params = {}) => get('cruise_destinations.php', params),
   getTestimonials:   ()            => get('testimonials.php'),
   submitInquiry:     (data)        => post('inquiries.php', {}, data),
   submitTestimonial: (data)        => post('testimonials.php', {}, data),
   getContent:        (page)        => get('content.php', { page }),
   getSettings:       ()            => get('settings.php'),
+  getCurrencyRate:   ()            => get('currency.php'),
 };

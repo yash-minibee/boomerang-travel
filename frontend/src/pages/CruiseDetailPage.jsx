@@ -1,0 +1,635 @@
+import { useState, useEffect } from "react";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Clock, Star, MapPin, Check, X, ChevronDown, ChevronUp,
+  ChevronLeft, ChevronRight, Phone, Mail, Utensils, Activity, MessageCircle, ArrowRight, Maximize2
+} from "lucide-react";
+import CruiseCard from "../components/CruiseCard";
+import { api, imageUrl } from "../api/api";
+import { useSettings } from "../context/SettingsContext";
+import { useCurrency } from "../context/CurrencyContext";
+
+function mapCruise(c) {
+  return {
+    ...c,
+    startingPrice: Number(c.starting_price),
+    reviews: c.review_count,
+    tag: c.tags?.[0] ?? null,
+    destinations: [c.destination_name || c.destination_region || ""],
+    days: parseInt(c.duration) || 0,
+    image: imageUrl(c.cover_image),
+  };
+}
+
+export default function CruiseDetailPage() {
+  const { formatPrice } = useCurrency();
+  const { slug } = useParams();
+  const { settings } = useSettings();
+  const navigate = useNavigate();
+  const [cruise, setCruise] = useState(null);
+  const [related, setRelated] = useState([]);
+  const [activeImg, setActiveImg] = useState(0);
+  const [activeAccordion, setActiveAccordion] = useState(null);
+  const [form, setForm] = useState({ name: "", email: "", phone: "", date: "", travellers: "2", children: "0", message: "" });
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+
+  useEffect(() => { window.scrollTo(0, 0); setActiveImg(0); }, [slug]);
+
+  useEffect(() => {
+    setLoading(true);
+    api.getCruise(slug)
+      .then(res => setCruise(mapCruise(res.data)))
+      .catch(() => navigate("/cruises"))
+      .finally(() => setLoading(false));
+  }, [slug]);
+
+  useEffect(() => {
+    api.getCruises({ status: "active", limit: 4 })
+      .then(res => setRelated((res.data ?? []).filter(c => c.slug !== slug).slice(0, 3).map(mapCruise)))
+      .catch(console.error);
+  }, [slug]);
+
+  const handleFormChange = e => setForm(f => ({ ...f, [e.target.name]: e.target.value }));
+
+  const handleSubmit = async e => {
+    e.preventDefault();
+    setSubmitting(true);
+    try {
+      await api.submitInquiry({
+        customer_name: form.name,
+        customer_email: form.email,
+        customer_phone: form.phone,
+        travel_date: form.date,
+        travellers: form.travellers,
+        children: form.children,
+        message: form.message,
+        package_name: cruise?.title,
+        package_id: cruise?.id,
+        type: "cruise",
+      });
+      setSubmitted(true);
+    } catch (err) {
+      alert(err.message || "Submission failed.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Build gallery — resolve all URLs, fallback to cover image
+  const gallery = cruise
+    ? (cruise.gallery?.length ? cruise.gallery : cruise.image ? [cruise.image] : []).map(imageUrl).filter(Boolean)
+    : [];
+
+  // Lock background scroll when lightbox is open
+  useEffect(() => {
+    if (isLightboxOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isLightboxOpen]);
+
+  // Handle keyboard navigation for the lightbox
+  useEffect(() => {
+    if (!isLightboxOpen) return;
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        setIsLightboxOpen(false);
+      } else if (e.key === "ArrowLeft") {
+        setLightboxIndex((prev) => (prev - 1 + gallery.length) % gallery.length);
+      } else if (e.key === "ArrowRight") {
+        setLightboxIndex((prev) => (prev + 1) % gallery.length);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isLightboxOpen, gallery.length]);
+
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center bg-stone-50 pt-20 lg:pt-24">
+      <div className="w-10 h-10 border-4 border-teal-600 border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+
+  if (!cruise) return null;
+
+  // Only show policies that have content
+  const policies = [
+    { key: "cancellation", label: "Cancellation Policy", content: cruise.policy_cancellation },
+    { key: "refund",       label: "Refund Policy",       content: cruise.policy_refund },
+    { key: "payment",      label: "Payment Policy",      content: cruise.policy_payment },
+  ].filter(p => p.content?.trim());
+
+  const hasInclusions = cruise.inclusions?.length > 0;
+  const hasExclusions = cruise.exclusions?.length > 0;
+
+  return (
+    <div className="min-h-screen bg-stone-50 pt-20 lg:pt-24">
+
+      {/* ── Hero Gallery ────────────────────────────────────────── */}
+      <div className="relative h-[55vh] lg:h-[65vh] overflow-hidden bg-teal-950 group/gallery">
+        {gallery.length > 0 ? (
+          <div
+            onClick={() => {
+              setLightboxIndex(activeImg);
+              setIsLightboxOpen(true);
+            }}
+            className="w-full h-full cursor-zoom-in relative"
+          >
+            <AnimatePresence mode="wait">
+              <motion.img
+                key={activeImg}
+                src={gallery[activeImg]}
+                alt={cruise.title}
+                initial={{ opacity: 0, scale: 1.05 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.6 }}
+                className="w-full h-full object-cover"
+              />
+            </AnimatePresence>
+            {/* Hover overlay with zoom icon */}
+            <div className="absolute inset-0 bg-black/25 opacity-0 group-hover/gallery:opacity-100 transition-opacity duration-300 flex items-center justify-center pointer-events-none">
+              <div className="bg-black/60 backdrop-blur-md px-5 py-2.5 rounded-full text-white text-sm font-semibold flex items-center gap-2 transform translate-y-3 group-hover/gallery:translate-y-0 transition-transform duration-300 shadow-lg">
+                <Maximize2 className="w-4 h-4 text-amber-400" />
+                <span>View Full Screen</span>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-teal-800 to-teal-950" />
+        )}
+
+        <div className="absolute inset-0 bg-gradient-to-t from-teal-950/80 via-teal-900/20 to-transparent pointer-events-none" />
+
+        {gallery.length > 1 && (
+          <>
+            <button onClick={() => setActiveImg(i => (i - 1 + gallery.length) % gallery.length)}
+              className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/40 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-amber-500/80 transition-colors z-10 cursor-pointer">
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <button onClick={() => setActiveImg(i => (i + 1) % gallery.length)}
+              className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/40 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-amber-500/80 transition-colors z-10 cursor-pointer">
+              <ChevronRight className="w-5 h-5" />
+            </button>
+            <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+              {gallery.map((_, i) => (
+                <button key={i} onClick={() => setActiveImg(i)}
+                  className={`rounded-full transition-all cursor-pointer ${i === activeImg ? "w-6 h-2.5 bg-amber-400" : "w-2.5 h-2.5 bg-white/50"}`} />
+              ))}
+            </div>
+          </>
+        )}
+
+        <div className="absolute bottom-0 left-0 right-0 p-6 lg:p-10 pointer-events-none z-10">
+          <nav className="text-white/60 text-xs mb-3 flex items-center gap-1.5 pointer-events-auto">
+            <Link to="/" className="hover:text-amber-300">Home</Link>
+            <span>/</span>
+            <Link to="/cruises" className="hover:text-amber-300">Cruises</Link>
+            <span>/</span>
+            <span className="text-white">{cruise.title}</span>
+          </nav>
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white leading-tight pointer-events-auto">{cruise.title}</h1>
+          <div className="flex flex-wrap items-center gap-4 mt-3 pointer-events-auto">
+            <div className="flex items-center gap-1.5 text-white/80 text-sm"><Clock className="w-4 h-4" /> {cruise.duration}</div>
+            <div className="flex items-center gap-1 text-amber-400 text-sm">
+              <Star className="w-4 h-4 fill-current" />
+              <span className="font-bold text-white">{cruise.rating}</span>
+              <span className="text-white/60">({cruise.reviews} reviews)</span>
+            </div>
+            {cruise.tag && <span className="bg-amber-500 text-white text-xs font-bold px-3 py-1 rounded-full">{cruise.tag}</span>}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Main Content ─────────────────────────────────────────── */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <div className="flex flex-col lg:flex-row gap-8">
+
+          {/* Left column */}
+          <div className="flex-1 min-w-0 space-y-8">
+
+            {/* Destination Route — only when itinerary has cities */}
+            {(() => {
+              if (!cruise.itinerary?.length) return null;
+              const cities = [...new Map(
+                cruise.itinerary.map(d => [d.city, d.city])
+              ).entries()]
+                .map(([c]) => c)
+                .filter(Boolean);
+              if (!cities.length) return null;
+              return (
+                <section className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+                  <h2 className="text-xl font-extrabold text-gray-900 mb-5">Destination Route</h2>
+                  <div className="flex items-center gap-0 overflow-x-auto pb-2">
+                    {cities.map((city, i) => (
+                      <div key={i} className="flex items-center shrink-0">
+                        <div className="flex flex-col items-center">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-600 to-teal-800 flex items-center justify-center text-white text-xs font-bold shadow-md">
+                            {i + 1}
+                          </div>
+                          <span className="text-xs text-gray-600 font-semibold mt-1.5 text-center max-w-[80px]">{city}</span>
+                        </div>
+                        {i < cities.length - 1 && (
+                          <div className="flex items-center mx-1 mb-4">
+                            <div className="w-8 h-0.5 bg-gradient-to-r from-amber-300 to-amber-400" />
+                            <ArrowRight className="w-3 h-3 text-amber-500 -ml-1" />
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              );
+            })()}
+
+            {/* Highlights */}
+            {cruise.highlights?.length > 0 && (
+              <section className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+                <h2 className="text-xl font-extrabold text-gray-900 mb-5 font-outfit">Cruise Highlights</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {cruise.highlights.map((h, i) => (
+                    <motion.div key={i} initial={{ opacity: 0, x: -10 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.05 }}
+                      className="flex items-start gap-3 bg-teal-50 rounded-2xl p-4">
+                      <div className="w-8 h-8 rounded-xl bg-teal-600 flex items-center justify-center shrink-0">
+                        <Check className="w-4 h-4 text-white" />
+                      </div>
+                      <span className="text-gray-700 text-sm font-medium">{h}</span>
+                    </motion.div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Itinerary */}
+            {cruise.itinerary?.length > 0 && (
+              <section className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+                <h2 className="text-xl font-extrabold text-gray-900 mb-6">Day-by-Day Itinerary</h2>
+                <div className="relative">
+                  <div className="absolute left-5 top-0 bottom-0 w-0.5 bg-gradient-to-b from-amber-200 via-amber-300 to-amber-100" />
+                  <div className="space-y-6">
+                    {cruise.itinerary.map((day, i) => (
+                      <motion.div key={i} initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }}
+                        viewport={{ once: true, margin: "-20px" }} transition={{ delay: i * 0.04 }} className="flex gap-5">
+                        <div className="relative z-10 w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white text-xs font-extrabold shrink-0 shadow-md">
+                          {day.day_number}
+                        </div>
+                        <div className="flex-1 bg-gray-50 rounded-2xl p-5 hover:bg-amber-50/40 transition-colors">
+                          <div className="flex items-start justify-between gap-3 mb-2">
+                            <h3 className="font-bold text-gray-900">{day.title}</h3>
+                            {day.city && (
+                              <span className="text-xs bg-teal-100 text-teal-700 px-2.5 py-1 rounded-full shrink-0 font-medium">
+                                <MapPin className="w-3 h-3 inline mr-0.5" />{day.city}
+                              </span>
+                            )}
+                          </div>
+                          {day.description && <p className="text-gray-600 text-sm leading-relaxed mb-3">{day.description}</p>}
+                          <div className="flex flex-wrap gap-2">
+                            {day.meals?.length > 0 && (
+                              <div className="flex items-center gap-1.5 text-xs text-gray-500 bg-white rounded-xl px-2.5 py-1.5">
+                                <Utensils className="w-3.5 h-3.5 text-amber-500" />{day.meals.join(", ")}
+                              </div>
+                            )}
+                            {day.transport?.length > 0 && (
+                              <div className="flex items-center gap-1.5 text-xs text-gray-500 bg-white rounded-xl px-2.5 py-1.5">
+                                <Activity className="w-3.5 h-3.5 text-blue-500" />{day.transport.join(", ")}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                </div>
+              </section>
+            )}
+
+            {/* Cabins (replacing Hotels design dynamically) */}
+            {cruise.cabins?.length > 0 && (
+              <section className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+                <h2 className="text-xl font-extrabold text-gray-900 mb-5">Cabins & Suites</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  {cruise.cabins.map((cabin, i) => {
+                    const cabinImg = imageUrl(cabin.image_url);
+                    return (
+                      <div key={i} className="rounded-2xl overflow-hidden border border-gray-100 group hover:shadow-md transition-shadow bg-white flex flex-col">
+                        <div className="h-40 overflow-hidden bg-teal-50 shrink-0">
+                          {cabinImg ? (
+                            <img src={cabinImg} alt={cabin.name}
+                              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                          ) : (
+                            <div className="w-full h-full bg-gradient-to-br from-teal-100 to-teal-200 flex items-center justify-center text-teal-400 text-3xl font-bold">
+                              {cabin.name?.[0]}
+                            </div>
+                          )}
+                        </div>
+                        <div className="p-4 flex-1 flex flex-col gap-3">
+                          <div className="flex items-center justify-between mb-1">
+                            <h4 className="font-bold text-gray-900 text-sm line-clamp-1">{cabin.name}</h4>
+                            <span className="text-[10px] bg-teal-50 border border-teal-100 text-teal-700 px-2 py-0.5 rounded-full font-bold uppercase shrink-0">{cabin.type}</span>
+                          </div>
+                          
+                          <p className="text-xs text-gray-500 font-medium mb-3 flex items-center gap-1.5">
+                            {cabin.capacity && <span>Capacity: {cabin.capacity}</span>}
+                            {cabin.capacity && cabin.size && <span>•</span>}
+                            {cabin.size && <span>Size: {cabin.size}</span>}
+                          </p>
+
+                          {cabin.amenities?.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5 mt-auto">
+                              {cabin.amenities.map(a => (
+                                <span key={a} className="text-xs bg-teal-50 text-teal-700 px-2 py-1 rounded-full">{a}</span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
+
+            {/* Inclusions & Exclusions */}
+            {(hasInclusions || hasExclusions) && (
+              <section className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+                <h2 className="text-xl font-extrabold text-gray-900 mb-5">Inclusions & Exclusions</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  {hasInclusions && (
+                    <div>
+                      <h3 className="text-teal-700 font-bold text-sm mb-3 flex items-center gap-2">
+                        <Check className="w-4 h-4" /> What's Included
+                      </h3>
+                      <ul className="space-y-2.5">
+                        {cruise.inclusions.map((item, i) => (
+                          <li key={i} className="flex items-start gap-2.5 text-sm text-gray-700">
+                            <div className="w-5 h-5 rounded-full bg-teal-100 flex items-center justify-center shrink-0 mt-0.5">
+                              <Check className="w-3 h-3 text-teal-600" />
+                            </div>
+                            {item}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {hasExclusions && (
+                    <div>
+                      <h3 className="text-red-500 font-bold text-sm mb-3 flex items-center gap-2">
+                        <X className="w-4 h-4" /> What's Excluded
+                      </h3>
+                      <ul className="space-y-2.5">
+                        {cruise.exclusions.map((item, i) => (
+                          <li key={i} className="flex items-start gap-2.5 text-sm text-gray-700">
+                            <div className="w-5 h-5 rounded-full bg-red-100 flex items-center justify-center shrink-0 mt-0.5">
+                              <X className="w-3 h-3 text-red-500" />
+                            </div>
+                            {item}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </section>
+            )}
+
+            {/* Policies */}
+            {policies.length > 0 && (
+              <section className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+                <h2 className="text-xl font-extrabold text-gray-900 mb-4">Policies</h2>
+                <div className="space-y-3">
+                  {policies.map(item => (
+                    <div key={item.key} className="border border-gray-100 rounded-2xl overflow-hidden bg-stone-50/10">
+                      <button onClick={() => setActiveAccordion(activeAccordion === item.key ? null : item.key)}
+                        className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-amber-50 transition-colors">
+                        <span className="font-semibold text-gray-800 text-sm">{item.label}</span>
+                        {activeAccordion === item.key
+                          ? <ChevronUp className="w-4 h-4 text-amber-500" />
+                          : <ChevronDown className="w-4 h-4 text-gray-400" />}
+                      </button>
+                      <AnimatePresence>
+                        {activeAccordion === item.key && (
+                          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }} className="overflow-hidden">
+                            <p className="px-5 pb-4 text-sm text-gray-600 leading-relaxed whitespace-pre-line">{item.content}</p>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+          </div>
+
+          {/* Sticky Inquiry Card */}
+          <aside className="lg:w-96 shrink-0">
+            <div className="sticky top-24">
+              <div className="bg-white rounded-3xl shadow-lg border border-gray-100 overflow-hidden">
+                <div className="bg-gradient-to-br from-teal-700 to-teal-900 p-6 text-white">
+                  <div className="text-sm text-teal-200">Starting from</div>
+                  <div className="text-3xl font-extrabold">{formatPrice(cruise.startingPrice, cruise.price_aud)}</div>
+                  <div className="text-teal-200 text-sm">per person</div>
+                  <div className="flex items-center gap-2 mt-2 text-teal-200 text-sm">
+                    <Clock className="w-4 h-4" /> {cruise.duration}
+                    <span className="mx-1">•</span>
+                    <Star className="w-4 h-4 fill-amber-300 text-amber-300" />
+                    <span className="text-white font-semibold">{cruise.rating}</span>
+                  </div>
+                </div>
+                <div className="p-6">
+                  {submitted ? (
+                    <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-6">
+                      <div className="text-4xl mb-3">🎉</div>
+                      <h3 className="font-bold text-gray-900">Inquiry Sent!</h3>
+                      <p className="text-gray-500 text-sm mt-2">Our expert will contact you within 24 hours.</p>
+                      <button onClick={() => setSubmitted(false)} className="mt-4 text-teal-600 text-sm font-semibold hover:underline">Send another</button>
+                    </motion.div>
+                  ) : (
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                      <h3 className="font-bold text-gray-900">Send Inquiry</h3>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="col-span-2">
+                          <label className="text-xs text-gray-500 font-medium mb-1.5 block">Full Name *</label>
+                          <input required name="name" value={form.name} onChange={handleFormChange} placeholder="Your full name"
+                            className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-teal-300" />
+                        </div>
+                        <div>
+                          <label className="text-xs text-gray-500 font-medium mb-1.5 block">Email *</label>
+                          <input required type="email" name="email" value={form.email} onChange={handleFormChange} placeholder="you@email.com"
+                            className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-teal-300" />
+                        </div>
+                        <div>
+                          <label className="text-xs text-gray-500 font-medium mb-1.5 block">Phone</label>
+                          <input name="phone" value={form.phone} onChange={handleFormChange} placeholder="+91..."
+                            className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-teal-300" />
+                        </div>
+                        <div className="col-span-2">
+                          <label className="text-xs text-gray-500 font-medium mb-1.5 block">Travel Date</label>
+                          <input type="date" name="date" value={form.date} onChange={handleFormChange}
+                            className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-teal-300" />
+                        </div>
+                        <div>
+                          <label className="text-xs text-gray-500 font-medium mb-1.5 block">Adults *</label>
+                          <select name="travellers" value={form.travellers} onChange={handleFormChange}
+                            className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-teal-300">
+                            {[1, 2, 3, 4, 5, 6, "7+"].map(n => <option key={n} value={n}>{n} {n === 1 ? "Adult" : "Adults"}</option>)}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-xs text-gray-500 font-medium mb-1.5 block">Children</label>
+                          <select name="children" value={form.children} onChange={handleFormChange}
+                            className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-teal-300">
+                            {[0, 1, 2, 3, 4, 5, "6+"].map(n => <option key={n} value={n}>{n} {n === 1 ? "Child" : "Children"}</option>)}
+                          </select>
+                        </div>
+                        <div className="col-span-2">
+                          <label className="text-xs text-gray-500 font-medium mb-1.5 block">Message</label>
+                          <textarea name="message" value={form.message} onChange={handleFormChange}
+                            placeholder="Any special requirements..." rows={3}
+                            className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-teal-300 resize-none" />
+                        </div>
+                      </div>
+                      <button type="submit" disabled={submitting}
+                        className="w-full bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white font-bold py-3.5 rounded-2xl flex items-center justify-center gap-2 transition-all disabled:opacity-60 cursor-pointer">
+                        <Mail className="w-4 h-4" /> {submitting ? "Sending..." : "Send Inquiry"}
+                      </button>
+                      <a href={`https://wa.me/${(settings.whatsapp_number || "").replace(/\D/g, "")}?text=Hi! I'm interested in the ${encodeURIComponent(cruise.title)} cruise.`}
+                        target="_blank" rel="noopener noreferrer"
+                        className="w-full flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white font-bold py-3.5 rounded-2xl transition-all shadow-md">
+                        <MessageCircle className="w-4 h-4" /> WhatsApp Now
+                      </a>
+                      <a href={`tel:${(settings.phone || "").replace(/\s+/g, "")}`}
+                        className="w-full flex items-center justify-center gap-2 border-2 border-gray-200 hover:border-amber-400 text-gray-700 font-semibold py-3 rounded-2xl text-sm transition-colors cursor-pointer">
+                        <Phone className="w-4 h-4 text-amber-500" /> Call Us
+                      </a>
+                    </form>
+                  )}
+                </div>
+              </div>
+            </div>
+          </aside>
+        </div>
+
+        {/* Related Cruises */}
+        {related.length > 0 && (
+          <section className="mt-16">
+            <h2 className="text-2xl font-extrabold text-gray-900 mb-6 font-outfit">You Might Also Like</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {related.map(c => <CruiseCard key={c.id} cruise={c} />)}
+            </div>
+          </section>
+        )}
+      </div>
+
+      {/* ── Full-Screen Lightbox Gallery ──────────────────────── */}
+      <AnimatePresence>
+        {isLightboxOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="fixed inset-0 z-50 flex flex-col bg-black/95 backdrop-blur-md select-none"
+            onClick={() => setIsLightboxOpen(false)}
+          >
+            {/* Top Bar: Close Button & Image Counter */}
+            <div className="flex items-center justify-between p-4 md:p-6 text-white z-10">
+              <div className="text-sm font-medium tracking-wide bg-black/30 px-3 py-1.5 rounded-full backdrop-blur-sm">
+                {lightboxIndex + 1} / {gallery.length}
+              </div>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsLightboxOpen(false);
+                }}
+                className="w-10 h-10 rounded-full bg-white/10 hover:bg-red-500 hover:scale-105 active:scale-95 flex items-center justify-center text-white transition-all cursor-pointer"
+                aria-label="Close Gallery"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Main Image Container */}
+            <div className="flex-1 flex items-center justify-center relative px-4 md:px-16 min-h-0">
+              {/* Previous Button */}
+              {gallery.length > 1 && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setLightboxIndex((i) => (i - 1 + gallery.length) % gallery.length);
+                  }}
+                  className="absolute left-4 md:left-8 w-12 h-12 rounded-full bg-white/10 hover:bg-amber-500 hover:scale-105 active:scale-95 flex items-center justify-center text-white transition-all cursor-pointer z-10"
+                  aria-label="Previous Image"
+                >
+                  <ChevronLeft className="w-6 h-6" />
+                </button>
+              )}
+
+              {/* Active Image */}
+              <AnimatePresence mode="wait">
+                <motion.img
+                  key={lightboxIndex}
+                  src={gallery[lightboxIndex]}
+                  alt={`${cruise.title} - Full Screen Gallery Image`}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.25 }}
+                  className="max-h-[70vh] max-w-[90vw] md:max-h-[78vh] object-contain rounded-lg shadow-2xl pointer-events-auto"
+                  onClick={(e) => e.stopPropagation()} // Prevent closing when clicking the image
+                />
+              </AnimatePresence>
+
+              {/* Next Button */}
+              {gallery.length > 1 && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setLightboxIndex((i) => (i + 1) % gallery.length);
+                  }}
+                  className="absolute right-4 md:right-8 w-12 h-12 rounded-full bg-white/10 hover:bg-amber-500 hover:scale-105 active:scale-95 flex items-center justify-center text-white transition-all cursor-pointer z-10"
+                  aria-label="Next Image"
+                >
+                  <ChevronRight className="w-6 h-6" />
+                </button>
+              )}
+            </div>
+
+            {/* Bottom Thumbnail Strip */}
+            {gallery.length > 1 && (
+              <div
+                className="p-4 md:p-6 bg-black/40 backdrop-blur-sm border-t border-white/10 z-10 pointer-events-auto overflow-x-auto flex justify-center gap-2 max-w-full"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex gap-2 max-w-full overflow-x-auto py-1 px-2">
+                  {gallery.map((img, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setLightboxIndex(idx)}
+                      className={`relative shrink-0 w-16 h-12 md:w-20 md:h-14 rounded-lg overflow-hidden border-2 transition-all duration-200 focus:outline-none cursor-pointer ${
+                        idx === lightboxIndex
+                          ? "border-amber-400 scale-105 opacity-100 shadow-md shadow-amber-400/25"
+                          : "border-transparent opacity-50 hover:opacity-80"
+                      }`}
+                    >
+                      <img src={img} alt={`Thumbnail ${idx + 1}`} className="w-full h-full object-cover" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}

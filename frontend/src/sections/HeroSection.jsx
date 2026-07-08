@@ -23,12 +23,12 @@ export default function HeroSection() {
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       <div className="absolute inset-0">
         <img
-          src="https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=1920&q=80"
-          alt="Travel background"
+          src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1920&q=80"
+          alt="Luxury tropical Maldives beach resort background with blue sky"
           className="w-full h-full object-cover"
         />
-        {/* Teal-tinted overlay matching logo's deep teal */}
-        <div className="absolute inset-0 bg-gradient-to-br from-teal-950/80 via-teal-900/60 to-teal-800/50" />
+        {/* Soft overlay gradient to ensure high readability of hero text and logo while maintaining turquoise water vibrance */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/30 to-black/10" />
       </div>
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center pt-24 pb-16">

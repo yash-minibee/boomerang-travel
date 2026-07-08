@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { SlidersHorizontal, X, ChevronLeft, ChevronRight } from "lucide-react";
 import PackageCard from "../components/PackageCard";
 import { api, imageUrl } from "../api/api";
+import { useCurrency } from "../context/CurrencyContext";
 
 const travelStyles = ["All", "Cultural", "Luxury", "Adventure", "Wellness", "Honeymoon", "Trekking"];
 const durationOptions = ["Any", "1-5 Days", "6-10 Days", "11-15 Days", "15+ Days"];
@@ -22,6 +23,7 @@ function mapPkg(pkg) {
 }
 
 export default function PackagesPage() {
+  const { currency, convertUSD } = useCurrency();
   const [searchParams, setSearchParams] = useSearchParams();
   const destParam = searchParams.get("destination") || "All";
 
@@ -74,12 +76,15 @@ export default function PackagesPage() {
           return true;
         });
       }
-      data = data.filter(p => p.startingPrice <= budget);
+      data = data.filter(p => {
+        const localPrice = currency === 'AUD' ? (p.price_aud ?? convertUSD(p.startingPrice)) : p.startingPrice;
+        return localPrice <= budget;
+      });
       setPackages(data);
       setTotal(data.length);
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
-  }, [search, destination, style, duration, budget]);
+  }, [search, destination, style, duration, budget, currency, convertUSD]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -118,9 +123,12 @@ export default function PackagesPage() {
         </div>
       </div>
       <div>
-        <h3 className="font-bold text-gray-800 text-sm mb-3">Budget: <span className="text-amber-600 font-bold">${budget.toLocaleString()}</span></h3>
+        <h3 className="font-bold text-gray-800 text-sm mb-3">Budget: <span className="text-amber-600 font-bold">{currency === 'AUD' ? 'A$' : '$'}{budget.toLocaleString()}</span></h3>
         <input type="range" min={500} max={10000} step={500} value={budget} onChange={e => setBudget(Number(e.target.value))} className="w-full accent-amber-500" />
-        <div className="flex justify-between text-xs text-gray-400 mt-1"><span>$500</span><span>$10,000+</span></div>
+        <div className="flex justify-between text-xs text-gray-400 mt-1">
+          <span>{currency === 'AUD' ? 'A$500' : '$500'}</span>
+          <span>{currency === 'AUD' ? 'A$10,000+' : '$10,000+'}</span>
+        </div>
       </div>
       <div>
         <h3 className="font-bold text-gray-800 text-sm mb-3">Duration</h3>

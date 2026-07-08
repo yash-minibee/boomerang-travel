@@ -5,6 +5,7 @@ import { Plus, Edit, Trash2, MapPin, Package } from "lucide-react";
 import PageHeader from "../components/ui/PageHeader";
 import SearchInput from "../components/ui/SearchInput";
 import DeleteModal from "../components/ui/DeleteModal";
+import Pagination from "../components/ui/Pagination";
 import { destinationsAPI, imageUrl } from "../api/api";
 
 
@@ -12,18 +13,22 @@ export default function DestinationsPage() {
   const [destinations, setDestinations] = useState([]);
   const [search, setSearch] = useState("");
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const LIMIT = 8;
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const params = { limit: 50 };
+      const params = { page, limit: LIMIT };
       if (search) params.search = search;
       const res = await destinationsAPI.list(params);
       setDestinations(res.data ?? []);
+      setTotal(res.pagination?.total ?? 0);
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
-  }, [search]);
+  }, [page, search]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -33,9 +38,11 @@ export default function DestinationsPage() {
     finally { setDeleteTarget(null); }
   };
 
+  const totalPages = Math.max(1, Math.ceil(total / LIMIT));
+
   return (
     <div className="space-y-6">
-      <PageHeader title="Destinations" subtitle={`${destinations.length} destinations`}
+      <PageHeader title="Destinations" subtitle={`${total} destinations`}
         action={
           <Link to="/destinations/add" className="flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white font-semibold text-sm px-5 py-2.5 rounded-xl transition-colors">
             <Plus className="w-4 h-4" /> Add Destination
@@ -43,8 +50,8 @@ export default function DestinationsPage() {
         }
       />
       <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex gap-3 items-center">
-        <SearchInput value={search} onChange={setSearch} placeholder="Search destinations..." />
-        <span className="ml-auto text-sm text-gray-400">{destinations.length} results</span>
+        <SearchInput value={search} onChange={v => { setSearch(v); setPage(1); }} placeholder="Search destinations..." />
+        <span className="ml-auto text-sm text-gray-400">{total} results</span>
       </div>
 
       {loading ? (
@@ -108,6 +115,11 @@ export default function DestinationsPage() {
           )}
         </div>
       )}
+
+      <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100 bg-white rounded-3xl mt-6">
+        <span className="text-sm text-gray-400">Page {page} of {totalPages}</span>
+        <Pagination current={page} total={totalPages} onChange={setPage} />
+      </div>
 
       <DeleteModal open={!!deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={handleDelete}
         title="Delete Destination" message="This will permanently delete the destination." />

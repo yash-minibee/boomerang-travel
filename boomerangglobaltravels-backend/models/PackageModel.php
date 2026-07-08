@@ -203,6 +203,11 @@ class PackageModel
                 $row[$field] = json_decode($row[$field], true) ?? [];
             }
         }
+        if (array_key_exists('starting_price', $row)) {
+            $usd = (float)($row['starting_price'] ?? 0);
+            $row['price_usd'] = $usd;
+            $row['price_aud'] = CurrencyHelper::convertUSDToAUD($usd);
+        }
         return $row;
     }
 }

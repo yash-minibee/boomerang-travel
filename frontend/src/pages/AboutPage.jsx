@@ -124,14 +124,14 @@ export default function AboutPage() {
     <div className="min-h-screen bg-white pt-20 lg:pt-24">
 
       {/* ── Hero ─────────────────────────────────────────────────────── */}
-      <div className="relative h-[70vh] min-h-[480px] overflow-hidden">
+      <div className="relative flex items-center justify-center min-h-[400px] sm:h-[70vh] sm:min-h-[480px] py-16 sm:py-0 overflow-hidden">
         <img
           src="https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1920&q=80"
           alt="About Boomerang Travel"
-          className="w-full h-full object-cover"
+          className="absolute inset-0 w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-br from-teal-950/80 via-teal-900/60 to-teal-800/40" />
-        <div className="absolute inset-0 flex flex-col items-center justify-center text-white px-4 text-center">
+        <div className="relative z-10 flex flex-col items-center justify-center text-white px-4 text-center max-w-4xl">
           <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}>
             <span className="text-amber-300 text-sm font-semibold tracking-widest uppercase">Our Story</span>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold mt-3 leading-tight">
@@ -204,7 +204,7 @@ export default function AboutPage() {
               className="rounded-3xl w-full h-96 object-cover shadow-2xl"
             />
             {/* Award badge */}
-            <div className="absolute -bottom-5 -left-5 bg-white rounded-2xl shadow-xl p-4 flex items-center gap-3 border border-amber-100">
+            <div className="absolute -bottom-5 left-2 sm:-left-5 bg-white rounded-2xl shadow-xl p-4 flex items-center gap-3 border border-amber-100 z-10">
               <Award className="w-9 h-9 text-amber-500 shrink-0" />
               <div>
                 <div className="font-bold text-gray-900 text-sm">Award Winning</div>
@@ -212,7 +212,7 @@ export default function AboutPage() {
               </div>
             </div>
             {/* Rating badge */}
-            <div className="absolute -top-5 -right-5 bg-teal-700 rounded-2xl shadow-xl p-4 text-white text-center">
+            <div className="absolute -top-5 right-2 sm:-right-5 bg-teal-700 rounded-2xl shadow-xl p-4 text-white text-center z-10">
               <div className="flex justify-center gap-0.5 mb-1">
                 {[...Array(5)].map((_, i) => <Star key={i} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />)}
               </div>
@@ -304,7 +304,7 @@ export default function AboutPage() {
             <span className="text-amber-600 font-semibold text-sm tracking-widest uppercase">Traveller Love</span>
             <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mt-2">What Our Guests Say</h2>
           </motion.div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {testimonials.map((t, i) => (
               <motion.div key={i} initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }} transition={{ delay: i * 0.1 }}

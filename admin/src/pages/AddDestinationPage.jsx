@@ -165,26 +165,24 @@ export default function AddDestinationPage() {
           <div className="sm:col-span-2">
             <div className="flex items-center justify-between mb-3">
               <label className="text-sm font-semibold text-gray-700">Highlights</label>
-              <button type="button" onClick={() => setHighlights(h => [...h, ""])}
-                className="text-teal-600 text-sm font-medium flex items-center gap-1">
-                <Plus className="w-3.5 h-3.5" /> Add
-              </button>
             </div>
-            <div className="space-y-2">
-              {highlights.map((h, i) => (
-                <div key={i} className="flex gap-2">
-                  <input value={h} onChange={e => setHighlights(arr => arr.map((a, idx) => idx === i ? e.target.value : a))}
-                    placeholder={`e.g. Best sunset views`}
-                    className="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-teal-300" />
-                  {highlights.length > 1 && (
-                    <button type="button" onClick={() => setHighlights(arr => arr.filter((_, idx) => idx !== i))}
-                      className="w-9 h-10 flex items-center justify-center rounded-xl bg-red-50 text-red-400 hover:bg-red-100">
-                      <X className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
+            <textarea
+              value={highlights.join("\n")}
+              onChange={e => setHighlights(e.target.value.split("\n"))}
+              placeholder="Enter each highlight on a new line&#10;e.g. Best sunset views&#10;Volcanic beaches"
+              rows={4}
+              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-teal-300 resize-y"
+            />
+            {highlights.filter(h => h.trim()).length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {highlights.filter(h => h.trim()).map((h, idx) => (
+                  <span key={idx} className="inline-flex items-center gap-1 bg-amber-50 text-amber-700 text-xs font-semibold px-2.5 py-1 rounded-full border border-amber-200/60">
+                    ★ {h}
+                  </span>
+                ))}
+              </div>
+            )}
+            <p className="text-xs text-gray-400 mt-1">Each new line will be stored as a separate highlight point (see preview above).</p>
           </div>
         </div>
 

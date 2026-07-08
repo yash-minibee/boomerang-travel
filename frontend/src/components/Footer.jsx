@@ -11,12 +11,12 @@ const SocialIcon = ({ href, children }) => (
 export default function Footer() {
   const { settings } = useSettings();
   return (
-    <footer className="bg-teal-950 text-gray-300">
+    <footer className="bg-teal-950 text-gray-300 pb-16 xl:pb-0">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
 
         {/* Brand */}
         <div className="space-y-4">
-          <img src="/logo.png" alt="Boomerang Travel" className="h-10 w-auto object-contain brightness-0 invert" />
+          <img src="/Boomerang-Logo.png" alt="Boomerang Travel" className="h-10 w-auto object-contain brightness-0 invert" />
           <p className="text-sm text-gray-400 leading-relaxed">
             Curating extraordinary travel experiences across the globe. Every journey tells a story — let us write yours.
           </p>

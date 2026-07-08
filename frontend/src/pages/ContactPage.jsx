@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Phone, Mail, MapPin, Clock, Send, MessageCircle, ChevronDown } from "lucide-react";
 import { api } from "../api/api";
@@ -34,7 +34,7 @@ const faqs = [
 
 export default function ContactPage() {
   const { settings } = useSettings();
-  const [form, setForm] = useState({ name: "", country: "", email: "", phone: "", destination: "", date: "", travellers: "", children: "0", budget: "", message: "" });
+  const [form, setForm] = useState({ name: "", country: "", email: "", phone: "", destination: "", date: "", travellers: "", children: "0", budget: "", message: "", inquiry_type: "package" });
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -44,13 +44,17 @@ export default function ContactPage() {
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    api.getDestinations()
-      .then(res => {
-        if (res && res.data) {
-          setDestinations(res.data);
-        }
-      })
-      .catch(err => console.warn("Failed to load destinations for contact page:", err));
+    Promise.all([
+      api.getDestinations().then(res => res.data ?? []),
+      api.getCruiseDestinations().then(res => res.data ?? []).catch(() => [])
+    ]).then(([dests, cruises]) => {
+      const combined = [
+        ...dests.map(d => ({ id: `pkg-${d.id}`, name: d.name, type: 'Package' })),
+        ...cruises.map(c => ({ id: `cru-${c.id}`, name: c.name, type: 'Cruise Port' }))
+      ];
+      const unique = combined.filter((v, i, a) => a.findIndex(t => t.name === v.name) === i);
+      setDestinations(unique);
+    }).catch(err => console.warn("Failed to load destinations for contact page:", err));
   }, []);
 
   const defaultContent = {
@@ -89,7 +93,7 @@ export default function ContactPage() {
         children: form.children,
         budget_range: form.budget,
         message: form.message,
-        type: "custom",
+        type: form.inquiry_type === "cruise" ? "custom_cruise" : "custom_package",
       });
       setSubmitted(true);
     } catch (err) {
@@ -166,17 +170,20 @@ export default function ContactPage() {
                       <input required name="phone" value={form.phone} onChange={handleChange} placeholder="+91 98765 43210" className={inputClass} />
                     </div>
                     <div>
-                      <label className="text-xs font-semibold text-gray-500 block mb-1.5">Dream Destination *</label>
-                      {destinations.length > 0 ? (
-                        <select required name="destination" value={form.destination} onChange={handleChange} className={inputClass}>
-                          <option value="">Select your dream destination</option>
-                          {destinations.map(d => (
-                            <option key={d.id} value={d.name}>{d.name}</option>
-                          ))}
-                        </select>
-                      ) : (
-                        <input required name="destination" value={form.destination} onChange={handleChange} placeholder="e.g. Bali, Europe, Japan..." className={inputClass} />
-                      )}
+                      <label className="text-xs font-semibold text-gray-500 block mb-1.5">Inquiry For *</label>
+                      <select required name="inquiry_type" value={form.inquiry_type} onChange={handleChange} className={inputClass}>
+                        <option value="package">Holiday Tour Package</option>
+                        <option value="cruise">Cruise Trip</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-gray-500 block mb-1.5">Dream Destination / Port *</label>
+                      <SearchableDestinationInput
+                        destinations={destinations}
+                        value={form.destination}
+                        onChange={(val) => setForm(f => ({ ...f, destination: val }))}
+                        className={inputClass}
+                      />
                     </div>
                     <div>
                       <label className="text-xs font-semibold text-gray-500 block mb-1.5">Travel Date *</label>
@@ -266,6 +273,67 @@ export default function ContactPage() {
         </div>
       </div>
 
+    </div>
+  );
+}
+
+function SearchableDestinationInput({ destinations, value, onChange, className }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [search, setSearch] = useState(value || "");
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    setSearch(value || "");
+  }, [value]);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (containerRef.current && !containerRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const filtered = destinations.filter(d =>
+    d.name.toLowerCase().includes(search.toLowerCase())
+  );
+
+  return (
+    <div ref={containerRef} className="relative">
+      <input
+        required
+        type="text"
+        placeholder="Type to search destinations / ports..."
+        value={search}
+        onChange={(e) => {
+          setSearch(e.target.value);
+          onChange(e.target.value);
+          setIsOpen(true);
+        }}
+        onFocus={() => setIsOpen(true)}
+        className={className}
+      />
+      {isOpen && filtered.length > 0 && (
+        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-xl z-50 max-h-56 overflow-y-auto p-1.5 space-y-1">
+          {filtered.map(d => (
+            <button
+              key={d.id}
+              type="button"
+              onClick={() => {
+                setSearch(d.name);
+                onChange(d.name);
+                setIsOpen(false);
+              }}
+              className="w-full text-left px-3 py-2.5 text-xs text-gray-700 hover:bg-teal-50 hover:text-teal-700 rounded-lg transition-colors flex items-center justify-between cursor-pointer"
+            >
+              <span className="font-semibold">{d.name}</span>
+              <span className="text-[9px] bg-teal-50 text-teal-700 px-2 py-0.5 rounded-full font-bold uppercase shrink-0">{d.type}</span>
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

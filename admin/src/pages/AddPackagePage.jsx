@@ -4,7 +4,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Plus, X, ChevronDown, ChevronUp, Upload, Check, Utensils, Bus, Tag, Image as ImageIcon, Star } from "lucide-react";
 import PageHeader from "../components/ui/PageHeader";
 import { FormInput, FormSelect, FormTextarea } from "../components/ui/FormFields";
-import { packagesAPI, mediaAPI, destinationsAPI, imageUrl } from "../api/api";
+import { packagesAPI, mediaAPI, destinationsAPI, hotelsGlobalAPI, imageUrl } from "../api/api";
 
 const STEPS = ["Basic Info", "Gallery & Highlights", "Itinerary", "Hotels", "Inclusions & Policies"];
 const MEAL_OPTIONS = ["Breakfast", "Lunch", "Dinner", "Welcome Drink", "High Tea"];
@@ -120,11 +120,18 @@ export default function AddPackagePage() {
   const [tags, setTags] = useState([]);
   const [destinationsList, setDestinationsList] = useState([]);
   const [showAddDestModal, setShowAddDestModal] = useState(false);
+  const [globalHotelsList, setGlobalHotelsList] = useState([]);
+  const [showAddHotelModal, setShowAddHotelModal] = useState(false);
+  const [activeHotelIndex, setActiveHotelIndex] = useState(null);
 
   useEffect(() => {
     destinationsAPI.list({ limit: 100 })
       .then(res => setDestinationsList(res.data ?? []))
       .catch(e => console.error("Error loading destinations:", e));
+
+    hotelsGlobalAPI.list({ limit: 100 })
+      .then(res => setGlobalHotelsList(res.data ?? []))
+      .catch(e => console.error("Error loading global hotels:", e));
   }, []);
 
   // Step 1 — Gallery & Highlights
@@ -297,6 +304,33 @@ export default function AddPackagePage() {
       }
     } catch (err) {
       alert("Failed to save destination: " + (err.message || "Unknown error"));
+      throw err;
+    }
+  };
+
+  const handleAddHotel = async (hotelForm) => {
+    try {
+      const res = await hotelsGlobalAPI.create({
+        name: hotelForm.name,
+        city: hotelForm.city,
+        star_rating: hotelForm.star_rating,
+        image_url: hotelForm.image_url,
+        amenities: hotelForm.amenities,
+      });
+      if (res.data) {
+        setGlobalHotelsList(prev => [...prev, res.data]);
+        if (activeHotelIndex !== null) {
+          updateHotel(activeHotelIndex, "name", res.data.name);
+          updateHotel(activeHotelIndex, "city", res.data.city);
+          updateHotel(activeHotelIndex, "rating", String(res.data.star_rating ?? "5"));
+          updateHotel(activeHotelIndex, "imagePreview", res.data.image_url ?? "");
+          updateHotel(activeHotelIndex, "amenities", res.data.amenities ?? []);
+        }
+        setShowAddHotelModal(false);
+        return res.data;
+      }
+    } catch (err) {
+      alert("Failed to save hotel: " + (err.message || "Unknown error"));
       throw err;
     }
   };
@@ -502,25 +536,24 @@ export default function AddPackagePage() {
       <div>
         <div className="flex items-center justify-between mb-3">
           <label className="text-sm font-semibold text-gray-700">Trip Highlights</label>
-          <button type="button" onClick={() => addListItem(setHighlights)} className="text-teal-600 text-sm font-medium flex items-center gap-1 hover:text-teal-700">
-            <Plus className="w-3.5 h-3.5" /> Add
-          </button>
         </div>
-        <div className="space-y-2.5">
-          {highlights.map((h, i) => (
-            <div key={i} className="flex items-center gap-2">
-              <input value={h} onChange={e => updateListItem(setHighlights, i, e.target.value)}
-                placeholder="e.g. Gondola ride in Venice"
-                className="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-teal-300" />
-              {highlights.length > 1 && (
-                <button type="button" onClick={() => removeListItem(setHighlights, i)}
-                  className="w-8 h-8 flex items-center justify-center rounded-xl bg-red-50 hover:bg-red-100 text-red-400">
-                  <X className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
+        <textarea
+          value={highlights.join("\n")}
+          onChange={e => setHighlights(e.target.value.split("\n"))}
+          placeholder="Enter each highlight on a new line&#10;e.g. Colosseum private tour&#10;Gondola ride in Venice&#10;Eiffel Tower dinner"
+          rows={6}
+          className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-teal-300 resize-y"
+        />
+        {highlights.filter(h => h.trim()).length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {highlights.filter(h => h.trim()).map((h, idx) => (
+              <span key={idx} className="inline-flex items-center gap-1 bg-amber-50 text-amber-700 text-xs font-semibold px-2.5 py-1 rounded-full border border-amber-200/60">
+                ★ {h}
+              </span>
+            ))}
+          </div>
+        )}
+        <p className="text-xs text-gray-400 mt-1">Each new line will be stored as a separate highlight point (see preview above).</p>
       </div>
     </div>
   );
@@ -643,6 +676,35 @@ export default function AddPackagePage() {
           </div>
 
           <div className="p-5 space-y-5">
+            {/* Auto-populate from database */}
+            <div className="bg-teal-50/40 border border-teal-100 rounded-xl p-4">
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-xs font-bold text-teal-800 uppercase tracking-wider block">
+                  Auto-populate from Database
+                </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveHotelIndex(i);
+                    setShowAddHotelModal(true);
+                  }}
+                  className="text-[11px] font-bold text-teal-600 hover:text-teal-700 flex items-center gap-1 cursor-pointer font-sans"
+                >
+                  + Add New Hotel to DB
+                </button>
+              </div>
+              <SearchableHotelSelect
+                hotels={globalHotelsList}
+                onSelect={(selectedHotel) => {
+                  updateHotel(i, "name", selectedHotel.name);
+                  updateHotel(i, "city", selectedHotel.city);
+                  updateHotel(i, "rating", String(selectedHotel.star_rating ?? "5"));
+                  updateHotel(i, "imagePreview", selectedHotel.image_url ?? "");
+                  updateHotel(i, "amenities", selectedHotel.amenities ?? []);
+                }}
+              />
+            </div>
+
             {/* Hotel Image */}
             <div>
               <label className="text-sm font-semibold text-gray-700 block mb-2">Hotel Image</label>
@@ -731,25 +793,24 @@ export default function AddPackagePage() {
           <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
             <Check className="w-4 h-4 text-green-500" /> Inclusions
           </label>
-          <button type="button" onClick={() => addListItem(setInclusions)} className="text-teal-600 text-sm font-medium flex items-center gap-1">
-            <Plus className="w-3.5 h-3.5" /> Add
-          </button>
         </div>
-        <div className="space-y-2">
-          {inclusions.map((item, i) => (
-            <div key={i} className="flex gap-2">
-              <input value={item} onChange={e => updateListItem(setInclusions, i, e.target.value)}
-                placeholder={`e.g. Daily breakfast`}
-                className="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-teal-300" />
-              {inclusions.length > 1 && (
-                <button type="button" onClick={() => removeListItem(setInclusions, i)}
-                  className="w-9 h-10 flex items-center justify-center rounded-xl bg-red-50 text-red-400 hover:bg-red-100">
-                  <X className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
+        <textarea
+          value={inclusions.join("\n")}
+          onChange={e => setInclusions(e.target.value.split("\n"))}
+          placeholder="Enter each inclusion on a new line&#10;e.g. 3 nights hotel stay&#10;Daily breakfast&#10;All transfers"
+          rows={6}
+          className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-teal-300 resize-y"
+        />
+        {inclusions.filter(item => item.trim()).length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {inclusions.filter(item => item.trim()).map((item, idx) => (
+              <span key={idx} className="inline-flex items-center gap-1 bg-green-50 text-green-700 text-xs font-semibold px-2.5 py-1 rounded-full border border-green-200/60">
+                ✓ {item}
+              </span>
+            ))}
+          </div>
+        )}
+        <p className="text-xs text-gray-400 mt-1 mb-4">Each new line will be stored as a separate inclusion point (see preview above).</p>
       </div>
 
       {/* Exclusions */}
@@ -758,25 +819,24 @@ export default function AddPackagePage() {
           <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
             <X className="w-4 h-4 text-red-400" /> Exclusions
           </label>
-          <button type="button" onClick={() => addListItem(setExclusions)} className="text-teal-600 text-sm font-medium flex items-center gap-1">
-            <Plus className="w-3.5 h-3.5" /> Add
-          </button>
         </div>
-        <div className="space-y-2">
-          {exclusions.map((item, i) => (
-            <div key={i} className="flex gap-2">
-              <input value={item} onChange={e => updateListItem(setExclusions, i, e.target.value)}
-                placeholder={`e.g. International flights`}
-                className="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-teal-300" />
-              {exclusions.length > 1 && (
-                <button type="button" onClick={() => removeListItem(setExclusions, i)}
-                  className="w-9 h-10 flex items-center justify-center rounded-xl bg-red-50 text-red-400 hover:bg-red-100">
-                  <X className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
+        <textarea
+          value={exclusions.join("\n")}
+          onChange={e => setExclusions(e.target.value.split("\n"))}
+          placeholder="Enter each exclusion on a new line&#10;e.g. International flights&#10;Travel insurance&#10;Personal expenses"
+          rows={6}
+          className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-teal-300 resize-y"
+        />
+        {exclusions.filter(item => item.trim()).length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {exclusions.filter(item => item.trim()).map((item, idx) => (
+              <span key={idx} className="inline-flex items-center gap-1 bg-red-50 text-red-700 text-xs font-semibold px-2.5 py-1 rounded-full border border-red-200/60">
+                ✕ {item}
+              </span>
+            ))}
+          </div>
+        )}
+        <p className="text-xs text-gray-400 mt-1">Each new line will be stored as a separate exclusion point (see preview above).</p>
       </div>
 
       {/* Policies */}
@@ -868,6 +928,11 @@ export default function AddPackagePage() {
         open={showAddDestModal}
         onClose={() => setShowAddDestModal(false)}
         onSave={handleAddDestination}
+      />
+      <AddHotelModal
+        open={showAddHotelModal}
+        onClose={() => setShowAddHotelModal(false)}
+        onSave={handleAddHotel}
       />
     </div>
   );
@@ -1060,29 +1125,23 @@ function AddDestinationModal({ open, onClose, onSave }) {
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-semibold text-gray-700">Highlights</label>
-                  <button type="button" onClick={() => setHighlights(h => [...h, ""])}
-                    className="text-teal-600 text-xs font-medium flex items-center gap-1 hover:text-teal-700">
-                    <Plus className="w-3.5 h-3.5" /> Add
-                  </button>
                 </div>
-                <div className="space-y-1.5 max-h-32 overflow-y-auto pr-1">
-                  {highlights.map((h, i) => (
-                    <div key={i} className="flex gap-2">
-                      <input
-                        value={h}
-                        onChange={e => setHighlights(arr => arr.map((a, idx) => idx === i ? e.target.value : a))}
-                        placeholder={`e.g. Best sunset views`}
-                        className="flex-1 border border-gray-200 rounded-xl px-3 py-1.5 text-xs outline-none focus:ring-2 focus:ring-teal-300"
-                      />
-                      {highlights.length > 1 && (
-                        <button type="button" onClick={() => setHighlights(arr => arr.filter((_, idx) => idx !== i))}
-                          className="w-8 h-8 shrink-0 flex items-center justify-center rounded-xl bg-red-50 text-red-400 hover:bg-red-100">
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                </div>
+                <textarea
+                  value={highlights.join("\n")}
+                  onChange={e => setHighlights(e.target.value.split("\n"))}
+                  placeholder="Enter each highlight on a new line&#10;e.g. Best sunset views&#10;Volcanic beaches"
+                  rows={3}
+                  className="w-full border border-gray-200 rounded-xl px-3 py-1.5 text-xs outline-none focus:ring-2 focus:ring-teal-300 resize-y"
+                />
+                {highlights.filter(h => h.trim()).length > 0 && (
+                  <div className="mt-1 flex flex-wrap gap-1">
+                    {highlights.filter(h => h.trim()).map((h, idx) => (
+                      <span key={idx} className="inline-flex items-center gap-1 bg-amber-50 text-amber-700 text-[10px] font-semibold px-2 py-0.5 rounded-full border border-amber-200/50">
+                        ★ {h}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Submit Buttons */}
@@ -1090,6 +1149,188 @@ function AddDestinationModal({ open, onClose, onSave }) {
                 <button type="button" onClick={onClose} className="flex-1 border border-gray-200 text-gray-700 font-semibold py-2.5 rounded-xl hover:bg-gray-50 transition-colors text-sm">Cancel</button>
                 <button type="submit" disabled={saving || uploading} className="flex-1 bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2.5 rounded-xl transition-colors text-sm disabled:opacity-50">
                   {saving ? "Saving..." : "Add Destination"}
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
+  );
+}
+
+// Inline hotel modal helper
+function AddHotelModal({ open, onClose, onSave }) {
+  const [name, setName] = useState("");
+  const [city, setCity] = useState("");
+  const [starRating, setStarRating] = useState("5");
+  const [amenities, setAmenities] = useState([]);
+  const [imageUrlStr, setImageUrlStr] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const fileRef = useRef(null);
+
+  const handleImageUpload = async (file) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => setImageUrlStr(e.target.result);
+    reader.readAsDataURL(file);
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("type", "hotels");
+      const res = await mediaAPI.upload(fd);
+      if (res.data?.url) setImageUrlStr(res.data.url);
+    } catch (err) {
+      alert("Image upload failed: " + (err.message || "error"));
+      setImageUrlStr("");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!name.trim()) { alert("Hotel name is required."); return; }
+    if (!city.trim()) { alert("Hotel city is required."); return; }
+    setSaving(true);
+    try {
+      await onSave({
+        name,
+        city,
+        star_rating: Number(starRating),
+        image_url: imageUrlStr || null,
+        amenities: amenities.filter(Boolean),
+      });
+      // Reset form
+      setName("");
+      setCity("");
+      setStarRating("5");
+      setAmenities([]);
+      setImageUrlStr("");
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <AnimatePresence>
+      {open && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/50" onClick={onClose} />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="relative bg-white rounded-3xl p-6 shadow-2xl max-w-lg w-full z-[101] max-h-[90vh] overflow-y-auto flex flex-col font-sans"
+          >
+            <button type="button" onClick={onClose} className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors z-10">
+              <X className="w-4 h-4 text-gray-500" />
+            </button>
+            
+            <h3 className="text-xl font-bold text-gray-900 mb-4 shrink-0">Add New Hotel to Database</h3>
+            
+            <form onSubmit={handleSubmit} className="space-y-4 pr-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-gray-700 block">Hotel Name *</label>
+                  <input
+                    required
+                    value={name}
+                    onChange={e => setName(e.target.value)}
+                    placeholder="e.g. Hotel de Russie"
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-teal-300"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-gray-700 block">City *</label>
+                  <input
+                    required
+                    value={city}
+                    onChange={e => setCity(e.target.value)}
+                    placeholder="e.g. Rome"
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-teal-300"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-gray-700 block">Star Rating *</label>
+                  <select
+                    value={starRating}
+                    onChange={e => setStarRating(e.target.value)}
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-teal-300 bg-white"
+                  >
+                    {[3, 4, 5].map(n => (
+                      <option key={n} value={n}>{n} Stars</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Hotel Image */}
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-gray-700 block">Hotel Image</label>
+                {imageUrlStr && !imageUrlStr.startsWith("data:") ? (
+                  <div className="relative rounded-xl overflow-hidden h-32 bg-gray-100">
+                    <img src={imageUrl(imageUrlStr)} alt="Hotel preview" className="w-full h-full object-cover" />
+                    <button type="button" onClick={() => setImageUrlStr("")}
+                      className="absolute top-2 right-2 w-6 h-6 bg-black/50 hover:bg-red-500 text-white rounded-full flex items-center justify-center">
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ) : imageUrlStr.startsWith("data:") ? (
+                  <div className="relative rounded-xl overflow-hidden h-32 bg-gray-100">
+                    <img src={imageUrlStr} alt="Uploading…" className="w-full h-full object-cover opacity-60" />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-5 h-5 border-2 border-teal-600 border-t-transparent rounded-full animate-spin" />
+                    </div>
+                  </div>
+                ) : null}
+
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => fileRef.current?.click()}
+                    className="flex-1 flex items-center justify-center gap-1.5 border border-dashed border-gray-300 rounded-xl py-2 px-3 hover:border-teal-400 hover:text-teal-600 text-gray-500 text-xs font-medium transition-colors cursor-pointer"
+                  >
+                    <Upload className="w-4 h-4 shrink-0" />
+                    {uploading ? "Uploading..." : imageUrlStr ? "Change Image" : "Upload Image"}
+                  </button>
+                  <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden"
+                    onChange={e => handleImageUpload(e.target.files[0])} />
+                </div>
+                <div>
+                  <input
+                    type="url"
+                    value={imageUrlStr?.startsWith("http") ? imageUrlStr : ""}
+                    onChange={e => setImageUrlStr(e.target.value)}
+                    placeholder="Or paste image URL…"
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-teal-300"
+                  />
+                </div>
+              </div>
+
+              {/* Amenities */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-gray-700 block">Amenities</label>
+                <TagInput
+                  tags={amenities}
+                  onChange={setAmenities}
+                  placeholder="e.g. Pool, Spa, WiFi…"
+                  suggestions={AMENITY_SUGGESTIONS}
+                />
+              </div>
+
+              {/* Submit Buttons */}
+              <div className="flex gap-3 pt-4 border-t border-gray-100 shrink-0">
+                <button type="button" onClick={onClose} className="flex-1 border border-gray-200 text-gray-700 font-semibold py-2.5 rounded-xl hover:bg-gray-50 transition-colors text-sm">Cancel</button>
+                <button type="submit" disabled={saving || uploading} className="flex-1 bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2.5 rounded-xl transition-colors text-sm disabled:opacity-50">
+                  {saving ? "Saving..." : "Add Hotel"}
                 </button>
               </div>
             </form>
@@ -1199,6 +1440,112 @@ function SearchableDestinationSelect({ destinations, value, onChange }) {
             ) : (
               <div className="text-center py-4 text-xs text-gray-400">
                 No destinations found.
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Custom Searchable Hotel dropdown with pictures, stars, city, and amenities preview
+function SearchableHotelSelect({ hotels, onSelect }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (containerRef.current && !containerRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const filteredHotels = hotels.filter(h =>
+    h.name.toLowerCase().includes(search.toLowerCase()) ||
+    (h.city && h.city.toLowerCase().includes(search.toLowerCase()))
+  );
+
+  return (
+    <div ref={containerRef} className="relative w-full">
+      <button
+        type="button"
+        onClick={() => { setIsOpen(!isOpen); setSearch(""); }}
+        className="w-full flex items-center justify-between border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-teal-300 bg-white min-h-[46px] text-left cursor-pointer"
+      >
+        <span className="text-gray-500 font-medium font-sans text-xs">-- Search & Select a hotel from DB --</span>
+        <ChevronDown className="w-4 h-4 text-gray-400 ml-2 shrink-0" />
+      </button>
+
+      {isOpen && (
+        <div className="absolute top-full left-0 right-0 mt-1.5 bg-white border border-gray-150 rounded-2xl shadow-xl z-50 p-2 space-y-2 max-h-80 flex flex-col font-sans">
+          <div className="relative shrink-0">
+            <input
+              type="text"
+              autoFocus
+              placeholder="Search hotel name or city..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-teal-300 bg-gray-50 font-sans"
+            />
+          </div>
+
+          <div className="overflow-y-auto flex-1 divide-y divide-gray-50 max-h-56">
+            {filteredHotels.length > 0 ? (
+              filteredHotels.map(h => {
+                const imgSrc = imageUrl(h.image_url);
+                return (
+                  <button
+                    key={h.id}
+                    type="button"
+                    onClick={() => {
+                      onSelect(h);
+                      setIsOpen(false);
+                    }}
+                    className="w-full flex items-start gap-3 px-3 py-2.5 text-left text-sm hover:bg-teal-50 rounded-xl transition-colors text-gray-700 font-sans"
+                  >
+                    <div className="w-12 h-12 rounded-lg overflow-hidden shrink-0 bg-teal-50 border border-gray-100">
+                      {imgSrc ? (
+                        <img src={imgSrc} alt={h.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-teal-600 bg-teal-50 text-xs font-bold font-mono">
+                          {h.name[0]}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="truncate font-semibold text-gray-800 text-xs sm:text-sm">{h.name}</p>
+                        <span className="text-[10px] text-amber-500 font-bold shrink-0 flex items-center gap-0.5">
+                          ★ {h.star_rating}
+                        </span>
+                      </div>
+                      <p className="text-[10px] sm:text-xs text-gray-400 truncate">{h.city}</p>
+                      {h.amenities?.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {h.amenities.slice(0, 3).map((a) => (
+                            <span key={a} className="bg-gray-100 text-gray-600 text-[9px] font-medium px-1.5 py-0.5 rounded">
+                              {a}
+                            </span>
+                          ))}
+                          {h.amenities.length > 3 && (
+                            <span className="text-gray-400 text-[9px] font-medium self-center">
+                              +{h.amenities.length - 3}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </button>
+                );
+              })
+            ) : (
+              <div className="text-center py-4 text-xs text-gray-400">
+                No hotels found.
               </div>
             )}
           </div>

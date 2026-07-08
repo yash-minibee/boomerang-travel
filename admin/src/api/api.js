@@ -117,6 +117,30 @@ export const destinationsAPI = {
   delete: (id)          => del('destinations.php', { id }),
 };
 
+// ── Cruises ─────────────────────────────────────────────────────────────────
+export const cruisesAPI = {
+  list:          (params = {})    => get('cruises.php', params),
+  getById:       (id)             => get('cruises.php', { id }),
+  get:           (slug)           => get('cruises.php', { slug }),
+  create:        (data)           => post('cruises.php', {}, data),
+  update:        (id, data)       => put('cruises.php', { id }, data),
+  delete:        (id)             => del('cruises.php', { id }),
+  toggleFeatured:(id)             => patch('cruises.php', { id, action: 'featured' }),
+  getItinerary:  (id)             => get('cruise_itinerary.php', { cruise_id: id }),
+  saveItinerary: (id, days)       => post('cruise_itinerary.php', { cruise_id: id }, { days }),
+  getCabins:     (id)             => get('cruise_cabins.php', { cruise_id: id }),
+  saveCabins:    (id, cabins)     => post('cruise_cabins.php', { cruise_id: id }, { cabins }),
+};
+
+// ── Cruise Destinations ──────────────────────────────────────────────────────
+export const cruiseDestinationsAPI = {
+  list:   (params = {}) => get('cruise_destinations.php', params),
+  get:    (id)          => get('cruise_destinations.php', { id }),
+  create: (data)        => post('cruise_destinations.php', {}, data),
+  update: (id, data)    => put('cruise_destinations.php', { id }, data),
+  delete: (id)          => del('cruise_destinations.php', { id }),
+};
+
 // ── Inquiries ───────────────────────────────────────────────────────────────
 export const inquiriesAPI = {
   list:         (params = {}) => get('inquiries.php', params),
@@ -164,4 +188,22 @@ export const settingsAPI = {
 export const dashboardAPI = {
   stats:   () => get('dashboard.php'),
   revenue: () => get('dashboard.php', { view: 'revenue' }),
+};
+
+// ── Global Hotels ────────────────────────────────────────────────────────────
+export const hotelsGlobalAPI = {
+  list:   (params = {}) => get('hotels_global.php', params),
+  get:    (id)          => get('hotels_global.php', { id }),
+  create: (data)        => post('hotels_global.php', {}, data),
+  update: (id, data)    => put('hotels_global.php', { id }, data),
+  delete: (id)          => del('hotels_global.php', { id }),
+};
+
+// ── Global Cabins ────────────────────────────────────────────────────────────
+export const cabinsGlobalAPI = {
+  list:   (params = {}) => get('cabins_global.php', params),
+  get:    (id)          => get('cabins_global.php', { id }),
+  create: (data)        => post('cabins_global.php', {}, data),
+  update: (id, data)    => put('cabins_global.php', { id }, data),
+  delete: (id)          => del('cabins_global.php', { id }),
 };

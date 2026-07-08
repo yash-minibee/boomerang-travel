@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Phone, Mail, Calendar, Users, MessageSquare, Globe, DollarSign } from "lucide-react";
 import PageHeader from "../components/ui/PageHeader";
@@ -10,6 +11,19 @@ import { inquiriesAPI } from "../api/api";
 const STATUSES = ["All", "New", "Contacted", "Proposal Sent", "Confirmed", "Closed"];
 
 export default function InquiriesPage() {
+  const location = useLocation();
+  const path = location.pathname;
+
+  let typeFilter = "package";
+  let title = "Package Inquiries";
+  if (path.includes("custom")) {
+    typeFilter = "custom";
+    title = "Custom Requests";
+  } else if (path.includes("cruise")) {
+    typeFilter = "cruise";
+    title = "Cruise Inquiries";
+  }
+
   const [inquiries, setInquiries] = useState([]);
   const [total, setTotal] = useState(0);
   const [search, setSearch] = useState("");
@@ -17,12 +31,27 @@ export default function InquiriesPage() {
   const [selected, setSelected] = useState(null);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [customType, setCustomType] = useState("all");
   const LIMIT = 10;
+
+  // Reset page, search, and status filter when location changes
+  useEffect(() => {
+    setPage(1);
+    setSearch("");
+    setStatusFilter("All");
+    setSelected(null);
+    setCustomType("all");
+  }, [path]);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const params = { page, limit: LIMIT };
+      let finalType = typeFilter;
+      if (typeFilter === "custom") {
+        if (customType === "packages") finalType = "custom_package";
+        else if (customType === "cruise") finalType = "custom_cruise";
+      }
+      const params = { page, limit: LIMIT, type: finalType };
       if (search) params.search = search;
       if (statusFilter !== "All") params.status = statusFilter;
       const res = await inquiriesAPI.list(params);
@@ -30,7 +59,7 @@ export default function InquiriesPage() {
       setTotal(res.pagination?.total ?? 0);
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
-  }, [page, search, statusFilter]);
+  }, [page, search, statusFilter, typeFilter, customType]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -46,19 +75,54 @@ export default function InquiriesPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Inquiries" subtitle={`${total} total inquiries`} />
+      <PageHeader title={title} subtitle={`${total} total inquiries`} />
 
-      <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex flex-wrap gap-3 items-center">
-        <SearchInput value={search} onChange={v => { setSearch(v); setPage(1); }} placeholder="Search by customer or package..." />
-        <div className="flex gap-2 flex-wrap">
-          {STATUSES.map(s => (
-            <button key={s} onClick={() => { setStatusFilter(s); setPage(1); }}
-              className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors ${statusFilter === s ? "bg-teal-600 text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200"}`}>
-              {s}
-            </button>
-          ))}
+      <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex flex-col gap-4">
+        {/* Row 1: Search and Count */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="w-full sm:max-w-md">
+            <SearchInput value={search} onChange={v => { setSearch(v); setPage(1); }}
+              placeholder={`Search by customer or ${typeFilter === 'custom' ? 'request' : typeFilter}...`} />
+          </div>
+          <span className="text-sm font-semibold text-gray-500 bg-gray-50 border border-gray-100 rounded-xl px-4 py-2 text-center shrink-0">
+            {total} inquiries
+          </span>
         </div>
-        <span className="ml-auto text-sm text-gray-400">{total} inquiries</span>
+
+        {/* Divider */}
+        <div className="border-t border-gray-50" />
+
+        {/* Row 2: Status and Category Filters */}
+        <div className="flex flex-col gap-3.5 lg:flex-row lg:items-center lg:gap-6">
+          {/* Status Filters */}
+          <div className="flex gap-2 flex-wrap">
+            {STATUSES.map(s => (
+              <button key={s} onClick={() => { setStatusFilter(s); setPage(1); }}
+                className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors cursor-pointer ${statusFilter === s ? "bg-teal-600 text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200"}`}>
+                {s}
+              </button>
+            ))}
+          </div>
+
+          {/* Separator for desktop */}
+          {typeFilter === "custom" && <div className="hidden lg:block h-5 w-[1px] bg-gray-200" />}
+
+          {/* Category Filters */}
+          {typeFilter === "custom" && (
+            <div className="flex gap-2 flex-wrap">
+              {[
+                  { label: "All Requests", value: "all" },
+                  { label: "Custom Packages", value: "packages" },
+                  { label: "Custom Cruises", value: "cruise" }
+                ].map(item => (
+                  <button key={item.value} type="button" onClick={() => { setCustomType(item.value); setPage(1); }}
+                    className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors cursor-pointer ${customType === item.value ? "bg-teal-600 text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-250"}`}>
+                    {item.label}
+                  </button>
+                ))}
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
@@ -66,7 +130,7 @@ export default function InquiriesPage() {
           <table className="w-full">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-100">
-                {["ID", "Customer", "Package", "Travel Date", "Travellers", "Status", "Action"].map(h => (
+                {["ID", "Customer", typeFilter === 'cruise' ? 'Cruise' : typeFilter === 'custom' ? 'Request' : 'Package', "Travel Date", "Travellers", "Status", "Action"].map(h => (
                   <th key={h} className="text-left px-5 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">{h}</th>
                 ))}
               </tr>
@@ -140,7 +204,7 @@ export default function InquiriesPage() {
                     { icon: Calendar, label: "Travel Date", value: selected.travel_date || "—" },
                     { icon: Users, label: "Travellers", value: selected.travellers ? `${selected.travellers} ${selected.travellers === 1 ? "Adult" : "Adults"}${selected.children ? `, ${selected.children} ${selected.children === 1 ? "Child" : "Children"}` : ""}` : "—" },
                     { icon: DollarSign, label: "Budget per Person", value: selected.budget_range || "—" },
-                    { icon: MessageSquare, label: "Destination / Package", value: selected.package_name || "—" },
+                    { icon: MessageSquare, label: typeFilter === 'cruise' ? "Cruise Selected" : typeFilter === 'custom' ? "Requested Package / Destination" : "Destination / Package", value: selected.package_name || "—" },
                   ].map(({ icon: Icon, label, value }) => (
                     <div key={label} className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl">
                       <Icon className="w-4 h-4 text-teal-600 mt-0.5 shrink-0" />

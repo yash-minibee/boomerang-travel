@@ -3,10 +3,13 @@ import { Link } from "react-router-dom";
 import { Clock, Star, Heart, ArrowRight, MapPin } from "lucide-react";
 import { useState } from "react";
 import { api, imageUrl } from "../api/api";
+import { useCurrency } from "../context/CurrencyContext";
 
 export default function PackageCard({ pkg, showTag = true, showHighlights = true }) {
   const [wishlisted, setWishlisted] = useState(false);
   const imgSrc = imageUrl(pkg.image || pkg.cover_image);
+
+  const { formatPrice } = useCurrency();
 
   return (
     <motion.div whileHover={{ y: -6 }} transition={{ duration: 0.3 }}
@@ -21,34 +24,34 @@ export default function PackageCard({ pkg, showTag = true, showHighlights = true
           </div>
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-
+ 
         {showTag && pkg.tag && (
           <span className="absolute top-4 left-4 bg-amber-500 text-white text-xs font-bold px-3 py-1 rounded-full">
             {pkg.tag}
           </span>
         )}
-
+ 
         <button onClick={() => setWishlisted(!wishlisted)}
           className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center hover:bg-white/40 transition-colors">
           <Heart className={`w-4 h-4 ${wishlisted ? "fill-red-500 text-red-500" : "text-white"}`} />
         </button>
-
+ 
         <div className="absolute bottom-4 left-4 flex items-center gap-1.5 text-white text-sm">
           <Clock className="w-4 h-4" /><span>{pkg.duration}</span>
         </div>
       </div>
-
+ 
       <div className="p-5 flex flex-col flex-1 gap-3">
-
+ 
         {/* Top content — grows to fill space */}
         <div className="flex-1 space-y-3">
           <div className="flex items-center gap-1.5 text-teal-600 text-xs font-medium">
             <MapPin className="w-3.5 h-3.5" />
             <span className="truncate">{(pkg.destinations ?? [pkg.destination_region ?? ""]).join(" → ")}</span>
           </div>
-
+ 
           <h3 className="font-bold text-gray-900 text-lg leading-tight">{pkg.title}</h3>
-
+ 
           {showHighlights && (pkg.highlights ?? []).length > 0 && (
             <div className="flex flex-wrap gap-1.5">
               {(pkg.highlights ?? []).slice(0, 3).map(h => (
@@ -57,7 +60,7 @@ export default function PackageCard({ pkg, showTag = true, showHighlights = true
             </div>
           )}
         </div>
-
+ 
         {/* Bottom — rating + price, always at bottom */}
         <div className="flex items-center justify-between pt-2 border-t border-gray-100">
           <div className="flex items-center gap-1.5">
@@ -68,7 +71,7 @@ export default function PackageCard({ pkg, showTag = true, showHighlights = true
           <div className="text-right">
             <div className="text-xs text-gray-400">Starting from</div>
             <div className="font-bold text-lg text-gray-900">
-              ${Number(pkg.startingPrice ?? pkg.starting_price ?? 0).toLocaleString()}
+              {formatPrice(pkg.startingPrice ?? pkg.starting_price ?? 0, pkg.price_aud)}
             </div>
           </div>
         </div>

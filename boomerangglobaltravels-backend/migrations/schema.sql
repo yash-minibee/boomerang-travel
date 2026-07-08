@@ -165,3 +165,121 @@ CREATE INDEX IF NOT EXISTS idx_inquiries_status     ON inquiries(status);
 CREATE INDEX IF NOT EXISTS idx_inquiries_created    ON inquiries(created_at);
 CREATE INDEX IF NOT EXISTS idx_customers_email      ON customers(email);
 CREATE INDEX IF NOT EXISTS idx_admin_users_email    ON admin_users(email);
+
+-- Cruises Schema Addition
+CREATE TABLE IF NOT EXISTS cruise_destinations (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    name          TEXT NOT NULL,
+    country       TEXT,
+    region        TEXT,
+    hero_image    TEXT,
+    description   TEXT,
+    highlights    TEXT DEFAULT '[]',
+    gallery       TEXT DEFAULT '[]',
+    featured      INTEGER DEFAULT 0,
+    cruise_count  INTEGER DEFAULT 0,
+    created_by    INTEGER REFERENCES admin_users(id),
+    updated_by    INTEGER REFERENCES admin_users(id),
+    created_at    DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at    DATETIME DEFAULT CURRENT_TIMESTAMP,
+    deleted_at    DATETIME DEFAULT NULL
+);
+
+CREATE TABLE IF NOT EXISTS cruises (
+    id                   INTEGER PRIMARY KEY AUTOINCREMENT,
+    title                TEXT NOT NULL,
+    slug                 TEXT NOT NULL UNIQUE,
+    category             TEXT,
+    cruise_destination_id INTEGER REFERENCES cruise_destinations(id),
+    duration             TEXT,
+    starting_price       REAL DEFAULT 0,
+    status               TEXT NOT NULL DEFAULT 'draft',
+    featured             INTEGER NOT NULL DEFAULT 0,
+    rating               REAL DEFAULT 0,
+    review_count         INTEGER DEFAULT 0,
+    cover_image          TEXT,
+    gallery              TEXT DEFAULT '[]',
+    highlights           TEXT DEFAULT '[]',
+    tags                 TEXT DEFAULT '[]',
+    inclusions           TEXT DEFAULT '[]',
+    exclusions           TEXT DEFAULT '[]',
+    policy_cancellation  TEXT,
+    policy_refund        TEXT,
+    policy_payment       TEXT,
+    meta_title           TEXT,
+    meta_description     TEXT,
+    meta_keywords        TEXT,
+    created_by           INTEGER REFERENCES admin_users(id),
+    updated_by           INTEGER REFERENCES admin_users(id),
+    created_at           DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at           DATETIME DEFAULT CURRENT_TIMESTAMP,
+    deleted_at           DATETIME DEFAULT NULL
+);
+
+CREATE TABLE IF NOT EXISTS cruise_itinerary_days (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    cruise_id   INTEGER NOT NULL REFERENCES cruises(id),
+    day_number  INTEGER NOT NULL,
+    title       TEXT,
+    city        TEXT,
+    description TEXT,
+    meals       TEXT DEFAULT '[]',
+    transport   TEXT DEFAULT '[]',
+    created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at  DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS cruise_cabins (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    cruise_id   INTEGER NOT NULL REFERENCES cruises(id),
+    name        TEXT NOT NULL,
+    type        TEXT,
+    capacity    TEXT,
+    size        TEXT,
+    star_rating INTEGER DEFAULT 5,
+    image_url   TEXT,
+    amenities   TEXT DEFAULT '[]',
+    created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at  DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Cruises Indexes
+CREATE INDEX IF NOT EXISTS idx_cruises_slug        ON cruises(slug);
+CREATE INDEX IF NOT EXISTS idx_cruises_status      ON cruises(status);
+CREATE INDEX IF NOT EXISTS idx_cruises_featured    ON cruises(featured);
+CREATE INDEX IF NOT EXISTS idx_cruise_destinations_featured ON cruise_destinations(featured);
+
+-- Currency Rates Table
+CREATE TABLE IF NOT EXISTS currency_rates (
+    currency   TEXT PRIMARY KEY,
+    rate       REAL NOT NULL,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Global Hotels Table
+CREATE TABLE IF NOT EXISTS hotels (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    name        TEXT NOT NULL,
+    city        TEXT,
+    star_rating INTEGER DEFAULT 5,
+    image_url   TEXT,
+    amenities   TEXT DEFAULT '[]',
+    created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at  DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Global Cabins Table
+CREATE TABLE IF NOT EXISTS cabins (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    name        TEXT NOT NULL,
+    type        TEXT,
+    capacity    TEXT,
+    size        TEXT,
+    star_rating INTEGER DEFAULT 5,
+    image_url   TEXT,
+    amenities   TEXT DEFAULT '[]',
+    created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at  DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+

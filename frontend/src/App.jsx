@@ -5,10 +5,13 @@ import Footer from "./components/Footer";
 import HomePage from "./pages/HomePage";
 import PackagesPage from "./pages/PackagesPage";
 import PackageDetailPage from "./pages/PackageDetailPage";
+import CruisesPage from "./pages/CruisesPage";
+import CruiseDetailPage from "./pages/CruiseDetailPage";
 import AboutPage from "./pages/AboutPage";
 import ContactPage from "./pages/ContactPage";
 import MicePage from "./pages/MicePage";
 import { SettingsProvider } from "./context/SettingsContext";
+import { CurrencyProvider } from "./context/CurrencyContext";
 
 const pageVariants = {
   initial: { opacity: 0, y: 10 },
@@ -25,6 +28,8 @@ function AnimatedRoutes() {
           <Route path="/" element={<HomePage />} />
           <Route path="/packages" element={<PackagesPage />} />
           <Route path="/packages/:slug" element={<PackageDetailPage />} />
+          <Route path="/cruises" element={<CruisesPage />} />
+          <Route path="/cruises/:slug" element={<CruiseDetailPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/mice" element={<MicePage />} />
@@ -37,11 +42,15 @@ function AnimatedRoutes() {
 export default function App() {
   return (
     <SettingsProvider>
-      <BrowserRouter>
-        <Navbar />
-        <AnimatedRoutes />
-        <Footer />
-      </BrowserRouter>
+      <CurrencyProvider>
+        <BrowserRouter>
+          <Navbar />
+          <div className="overflow-x-hidden w-full">
+            <AnimatedRoutes />
+          </div>
+          <Footer />
+        </BrowserRouter>
+      </CurrencyProvider>
     </SettingsProvider>
   );
 }

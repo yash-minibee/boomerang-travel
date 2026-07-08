@@ -26,7 +26,18 @@ class InquiryModel
         $params[] = $offset;
 
         $stmt = $this->db->prepare(
-            "SELECT * FROM inquiries WHERE 1=1 {$where} ORDER BY created_at DESC LIMIT ? OFFSET ?"
+            "SELECT * FROM inquiries WHERE 1=1 {$where} 
+             ORDER BY 
+                CASE status 
+                    WHEN 'New' THEN 1 
+                    WHEN 'Contacted' THEN 2 
+                    WHEN 'Proposal Sent' THEN 3 
+                    WHEN 'Confirmed' THEN 4 
+                    WHEN 'Closed' THEN 5 
+                    ELSE 6 
+                END ASC, 
+                created_at DESC 
+             LIMIT ? OFFSET ?"
         );
         $stmt->execute($params);
         return $stmt->fetchAll();
@@ -82,8 +93,12 @@ class InquiryModel
             $params[] = $filters['status'];
         }
         if (!empty($filters['type'])) {
-            $where   .= ' AND type = ?';
-            $params[] = $filters['type'];
+            if ($filters['type'] === 'custom') {
+                $where   .= " AND (type = 'custom' OR type = 'custom_package' OR type = 'custom_cruise')";
+            } else {
+                $where   .= ' AND type = ?';
+                $params[] = $filters['type'];
+            }
         }
         if (!empty($filters['search'])) {
             $where   .= ' AND (customer_name LIKE ? OR customer_email LIKE ? OR package_name LIKE ?)';

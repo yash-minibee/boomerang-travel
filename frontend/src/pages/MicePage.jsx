@@ -129,11 +129,11 @@ export default function MicePage() {
               We design and execute elite corporate retreats, high-impact conferences, and premium reward travel programs across the globe. Seamless logistics meet extraordinary hospitality.
             </p>
 
-            <div className="mt-10 flex flex-wrap justify-center gap-4">
-              <a href="#rfp" className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold px-8 py-3.5 rounded-full shadow-lg hover:shadow-amber-500/10 hover:scale-[1.02] transition-all text-sm">
+            <div className="mt-10 flex flex-col sm:flex-row justify-center items-center gap-4 max-w-md mx-auto sm:max-w-none">
+              <a href="#rfp" className="w-full sm:w-auto text-center bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold px-8 py-3.5 rounded-full shadow-lg hover:shadow-amber-500/10 hover:scale-[1.02] transition-all text-sm">
                 Request Proposal (RFP)
               </a>
-              <a href={`tel:${(settings.phone || "").replace(/\s+/g, '')}`} className="bg-white/10 hover:bg-white/20 border border-white/20 text-white font-medium px-8 py-3.5 rounded-full hover:scale-[1.02] transition-all text-sm flex items-center gap-2">
+              <a href={`tel:${(settings.phone || "").replace(/\s+/g, '')}`} className="w-full sm:w-auto text-center justify-center bg-white/10 hover:bg-white/20 border border-white/20 text-white font-medium px-8 py-3.5 rounded-full hover:scale-[1.02] transition-all text-sm flex items-center gap-2">
                 <Phone className="w-4 h-4" /> Speak to Consultant
               </a>
             </div>
@@ -157,7 +157,7 @@ export default function MicePage() {
             return (
               <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }} transition={{ delay: i * 0.1 }}
-                className="bg-white border border-gray-100 rounded-3xl p-8 hover:border-teal-500/30 hover:shadow-lg transition-all duration-300 group flex items-start gap-5">
+                className="bg-white border border-gray-100 rounded-3xl p-6 sm:p-8 hover:border-teal-500/30 hover:shadow-lg transition-all duration-300 group flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-4 sm:gap-5">
                 <div className="w-12 h-12 rounded-2xl bg-teal-500/10 flex items-center justify-center shrink-0 border border-teal-500/10 text-teal-600 group-hover:bg-teal-600 group-hover:text-white transition-all duration-300">
                   <Icon className="w-6 h-6" />
                 </div>
@@ -224,7 +224,7 @@ export default function MicePage() {
 
           {/* Corporate Stats */}
           <motion.div initial={{ opacity: 0, x: 30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}
-            className="grid grid-cols-2 gap-6">
+            className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
             {[
               { icon: Users,        num: "500+",  label: "Corporate Clients" },
               { icon: Globe,        num: "50+",   label: "Event Destinations" },
@@ -253,7 +253,7 @@ export default function MicePage() {
             </p>
           </motion.div>
 
-          <div className="bg-white border border-gray-100 shadow-xl rounded-3xl p-8 md:p-12">
+          <div className="bg-white border border-gray-100 shadow-xl rounded-3xl p-5 sm:p-8 md:p-12">
             {submitted ? (
               <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-12">
                 <div className="text-6xl mb-6">🏆</div>

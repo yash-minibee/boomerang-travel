@@ -9,6 +9,7 @@ import {
 import PackageCard from "../components/PackageCard";
 import { api, imageUrl } from "../api/api";
 import { useSettings } from "../context/SettingsContext";
+import { useCurrency } from "../context/CurrencyContext";
 
 function mapPkg(pkg) {
   return {
@@ -23,6 +24,7 @@ function mapPkg(pkg) {
 }
 
 export default function PackageDetailPage() {
+  const { formatPrice } = useCurrency();
   const { slug } = useParams();
   const { settings } = useSettings();
   const navigate = useNavigate();
@@ -437,7 +439,7 @@ export default function PackageDetailPage() {
               <div className="bg-white rounded-3xl shadow-lg border border-gray-100 overflow-hidden">
                 <div className="bg-gradient-to-br from-teal-700 to-teal-900 p-6 text-white">
                   <div className="text-sm text-teal-200">Starting from</div>
-                  <div className="text-3xl font-extrabold">${pkg.startingPrice.toLocaleString()}</div>
+                  <div className="text-3xl font-extrabold">{formatPrice(pkg.startingPrice, pkg.price_aud)}</div>
                   <div className="text-teal-200 text-sm">per person</div>
                   <div className="flex items-center gap-2 mt-2 text-teal-200 text-sm">
                     <Clock className="w-4 h-4" /> {pkg.duration}

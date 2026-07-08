@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { Save, Globe, Plus, Trash2, ChevronUp, ChevronDown } from "lucide-react";
 import PageHeader from "../components/ui/PageHeader";
 import { FormInput, FormTextarea } from "../components/ui/FormFields";
-import { contentAPI } from "../api/api";
+import { contentAPI, packagesAPI, cruisesAPI, imageUrl } from "../api/api";
 
 const PAGE_FIELDS = {
   home: [
@@ -36,6 +36,8 @@ export default function ContentPage({ section = "home" }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [allPackages, setAllPackages] = useState([]);
+  const [allCruises, setAllCruises] = useState([]);
 
   const continentSections = (() => {
     try {
@@ -58,6 +60,16 @@ export default function ContentPage({ section = "home" }) {
       .then(res => setFields(res.data ?? {}))
       .catch(console.error)
       .finally(() => setLoading(false));
+
+    if (section === "home") {
+      packagesAPI.list({ limit: 100 })
+        .then(res => setAllPackages(res.data ?? []))
+        .catch(console.error);
+
+      cruisesAPI.list({ limit: 100 })
+        .then(res => setAllCruises(res.data ?? []))
+        .catch(console.error);
+    }
   }, [section]);
 
   const handleSave = async () => {
@@ -116,7 +128,9 @@ export default function ContentPage({ section = "home" }) {
                     continent: "Europe",
                     title: "New Escapes",
                     subtitle: "Discover beautiful destinations.",
-                    badge: "Featured Region"
+                    badge: "Featured Region",
+                    type: "package",
+                    items: []
                   }
                 ];
                 setContinentSections(newSections);
@@ -136,24 +150,6 @@ export default function ContentPage({ section = "home" }) {
               {continentSections.map((sec, idx) => (
                 <div key={sec.id || idx} className="bg-stone-50 rounded-2xl p-5 border border-stone-200/60 relative group">
                   <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
-                    {/* Continent Selector */}
-                    <div className="md:col-span-3">
-                      <label className="block text-xs font-bold text-gray-700 mb-1.5">Continent / Region</label>
-                      <select
-                        value={sec.continent}
-                        onChange={(e) => {
-                          const updated = [...continentSections];
-                          updated[idx] = { ...updated[idx], continent: e.target.value };
-                          setContinentSections(updated);
-                        }}
-                        className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm bg-white outline-none focus:ring-2 focus:ring-teal-300"
-                      >
-                        {["Asia", "Africa", "North America", "South America", "Antarctica", "Europe", "Australia/Oceania"].map(opt => (
-                          <option key={opt} value={opt}>{opt}</option>
-                        ))}
-                      </select>
-                    </div>
-
                     {/* Badge */}
                     <div className="md:col-span-3">
                       <label className="block text-xs font-bold text-gray-700 mb-1.5">Badge Text</label>
@@ -171,7 +167,7 @@ export default function ContentPage({ section = "home" }) {
                     </div>
 
                     {/* Title */}
-                    <div className="md:col-span-4">
+                    <div className="md:col-span-3">
                       <label className="block text-xs font-bold text-gray-700 mb-1.5">Section Title</label>
                       <input
                         type="text"
@@ -184,6 +180,43 @@ export default function ContentPage({ section = "home" }) {
                         placeholder="e.g. European Escapes"
                         className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm bg-white outline-none focus:ring-2 focus:ring-teal-300"
                       />
+                    </div>
+
+                    {/* Type Selector Toggle */}
+                    <div className="md:col-span-4">
+                      <label className="block text-xs font-bold text-gray-700 mb-1.5">Row Type</label>
+                      <div className="flex gap-1 bg-gray-200/60 p-1 rounded-xl w-fit">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const updated = [...continentSections];
+                            updated[idx] = { ...updated[idx], type: "package", items: [] };
+                            setContinentSections(updated);
+                          }}
+                          className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                            (sec.type ?? "package") === "package"
+                              ? "bg-teal-600 text-white shadow-sm"
+                              : "text-gray-500 hover:text-gray-800"
+                          }`}
+                        >
+                          Package
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const updated = [...continentSections];
+                            updated[idx] = { ...updated[idx], type: "cruise", items: [] };
+                            setContinentSections(updated);
+                          }}
+                          className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                            sec.type === "cruise"
+                              ? "bg-teal-600 text-white shadow-sm"
+                              : "text-gray-500 hover:text-gray-800"
+                          }`}
+                        >
+                          Cruise
+                        </button>
+                      </div>
                     </div>
 
                     {/* Actions Column */}
@@ -240,7 +273,24 @@ export default function ContentPage({ section = "home" }) {
                           setContinentSections(updated);
                         }}
                         placeholder="e.g. Indulge in iconic landmarks..."
-                        className="w-full px-3.5 py-2 border border-gray-200 rounded-xl text-sm bg-white outline-none focus:ring-2 focus:ring-teal-300"
+                        className="w-full px-3.5 py-2 border border-gray-200 rounded-xl text-sm bg-white outline-none focus:ring-2 focus:ring-teal-300 animate-none resize-none"
+                      />
+                    </div>
+
+                    {/* Checkbox select items */}
+                    <div className="md:col-span-12">
+                      <label className="block text-xs font-bold text-gray-700 mb-1.5">
+                        Select {sec.type === "cruise" ? "Cruises" : "Packages"} to Display
+                      </label>
+                      <ItemSelector
+                        type={sec.type ?? "package"}
+                        selectedIds={sec.items ?? []}
+                        allItems={sec.type === "cruise" ? allCruises : allPackages}
+                        onChange={(newIds) => {
+                          const updated = [...continentSections];
+                          updated[idx] = { ...updated[idx], items: newIds };
+                           setContinentSections(updated);
+                        }}
                       />
                     </div>
                   </div>
@@ -255,6 +305,85 @@ export default function ContentPage({ section = "home" }) {
         <Globe className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
         <p className="text-sm text-amber-700">Changes saved here update the live website. Review content before saving.</p>
       </div>
+    </div>
+  );
+}
+
+function ItemSelector({ type, selectedIds, allItems, onChange }) {
+  const [search, setSearch] = useState("");
+
+  const filtered = allItems.filter(item =>
+    item.title?.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const toggle = (id) => {
+    if (selectedIds.includes(id)) {
+      onChange(selectedIds.filter(x => x !== id));
+    } else {
+      onChange([...selectedIds, id]);
+    }
+  };
+
+  return (
+    <div className="border border-gray-200 rounded-2xl bg-white p-4 space-y-3">
+      <input
+        type="text"
+        placeholder={`Search ${type === "cruise" ? "cruises" : "packages"}...`}
+        value={search}
+        onChange={e => setSearch(e.target.value)}
+        className="w-full px-3.5 py-2 border border-gray-200 rounded-xl text-xs bg-gray-50 outline-none focus:ring-2 focus:ring-teal-300"
+      />
+      <div className="max-h-52 overflow-y-auto divide-y divide-gray-100 pr-2">
+        {filtered.length > 0 ? (
+          filtered.map(item => {
+            const selectedIndex = selectedIds.indexOf(item.id);
+            const isChecked = selectedIndex !== -1;
+            const imgSrc = imageUrl(item.cover_image);
+            return (
+              <label
+                key={item.id}
+                className="flex items-center gap-3 py-2 text-xs text-gray-700 cursor-pointer hover:bg-gray-50 rounded-lg px-2 transition-colors"
+              >
+                <input
+                  type="checkbox"
+                  checked={isChecked}
+                  onChange={() => toggle(item.id)}
+                  className="sr-only"
+                />
+                <div className={`w-5 h-5 rounded-full border flex items-center justify-center text-[9px] font-bold transition-all shrink-0 ${
+                  isChecked 
+                    ? "bg-teal-600 border-teal-600 text-white shadow-sm scale-105" 
+                    : "border-gray-300 bg-white text-transparent hover:border-gray-400"
+                }`}>
+                  {isChecked ? selectedIndex + 1 : ""}
+                </div>
+                {imgSrc ? (
+                  <img
+                    src={imgSrc}
+                    alt={item.title}
+                    className="w-10 h-10 object-cover rounded-lg bg-gray-100 shrink-0 border border-gray-100"
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-lg bg-teal-50 border border-teal-100 flex items-center justify-center text-teal-600 text-[10px] font-bold shrink-0">
+                    {item.title?.[0]}
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold truncate text-gray-800">{item.title}</p>
+                  <p className="text-[10px] text-gray-400">
+                    {item.duration} · ${item.starting_price}
+                  </p>
+                </div>
+              </label>
+            );
+          })
+        ) : (
+          <p className="text-center py-4 text-xs text-gray-400">No matching items found</p>
+        )}
+      </div>
+      <p className="text-[10px] text-gray-400 font-medium">
+        Selected: {selectedIds.length} {type === "cruise" ? "cruises" : "packages"}
+      </p>
     </div>
   );
 }

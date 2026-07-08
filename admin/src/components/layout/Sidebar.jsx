@@ -3,7 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard, Package, Star, Globe, Settings, ChevronDown,
-  Plus, List, X, Compass, MessageSquare
+  Plus, List, X, Compass, MessageSquare, Anchor, Building, Bed
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { imageUrl } from "../../api/api";
@@ -23,8 +23,33 @@ const nav = [
     ]
   },
   {
+    label: "Hotels", icon: Building, children: [
+      { label: "All Hotels", icon: List, path: "/hotels" },
+      { label: "Add Hotel", icon: Plus, path: "/hotels/add" },
+    ]
+  },
+  {
+    label: "Cruises", icon: Anchor, children: [
+      { label: "All Cruises", icon: List, path: "/cruises" },
+      { label: "Add Cruise", icon: Plus, path: "/cruises/add" },
+    ]
+  },
+  {
+    label: "Cabins", icon: Bed, children: [
+      { label: "All Cabins", icon: List, path: "/cabins" },
+      { label: "Add Cabin", icon: Plus, path: "/cabins/add" },
+    ]
+  },
+  {
+    label: "Cruise Destinations", icon: Compass, children: [
+      { label: "All Destinations", icon: List, path: "/cruise-destinations" },
+      { label: "Add Destination", icon: Plus, path: "/cruise-destinations/add" },
+    ]
+  },
+  {
     label: "Inquiries", icon: MessageSquare, children: [
       { label: "Package Inquiries", icon: List, path: "/inquiries" },
+      { label: "Cruise Inquiries", icon: List, path: "/inquiries/cruise" },
       { label: "Custom Requests", icon: List, path: "/inquiries/custom" },
     ]
   },
@@ -104,7 +129,7 @@ export default function Sidebar({ mobileOpen, onClose }) {
       {/* Logo */}
       <div className="py-2.5 px-4 border-b border-teal-800 flex items-center justify-center relative">
         <Link to="/dashboard" onClick={onClose} className="flex items-center justify-center w-full">
-          <img src={`${import.meta.env.BASE_URL}logo.png`} alt="Boomerang Travel" className="h-16 w-auto object-contain brightness-0 invert" />
+          <img src={`${import.meta.env.BASE_URL}Boomerang-Logo.png`} alt="Boomerang Travel" className="h-16 w-auto object-contain brightness-0 invert" />
         </Link>
         {mobileOpen !== undefined && (
           <button onClick={onClose} className="absolute right-4 top-1/2 -translate-y-1/2 lg:hidden text-teal-400 hover:text-white">

@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
 import PackageCard from "../components/PackageCard";
+import CruiseCard from "../components/CruiseCard";
 import { api, imageUrl } from "../api/api";
 import usePageContent from "../hooks/usePageContent";
 
@@ -66,14 +67,47 @@ export default function ContinentPackages() {
 
     const fetchAll = async () => {
       try {
-        const promises = parsedSections.map(sec => 
-          api.getPackages({ destination: sec.continent, status: "active", limit: 12 })
-        );
+        const promises = parsedSections.map(sec => {
+          const selectedIds = sec.items ?? [];
+          if (selectedIds.length > 0) {
+            if (sec.type === "cruise") {
+              return api.getCruises({ limit: 100 });
+            } else {
+              return api.getPackages({ limit: 100 });
+            }
+          } else {
+            return api.getPackages({ destination: sec.continent, status: "active", limit: 12 });
+          }
+        });
         const results = await Promise.all(promises);
         
         const newPackages = {};
         parsedSections.forEach((sec, idx) => {
-          newPackages[sec.id || idx] = (results[idx].data ?? []).map(mapPkg);
+          const allItems = results[idx].data ?? [];
+          const selectedIds = sec.items ?? [];
+          
+          if (selectedIds.length > 0) {
+            const filtered = selectedIds
+              .map(id => allItems.find(item => Number(item.id) === Number(id)))
+              .filter(Boolean);
+            if (sec.type === "cruise") {
+              newPackages[sec.id || idx] = filtered.map(c => ({
+                ...c,
+                isCruise: true,
+                startingPrice: Number(c.starting_price),
+                reviews: c.review_count,
+                tag: c.tags?.[0] ?? null,
+                destinations: [],
+                days: parseInt(c.duration) || 0,
+                style: [c.category],
+                image: c.cover_image,
+              }));
+            } else {
+              newPackages[sec.id || idx] = filtered.map(mapPkg);
+            }
+          } else {
+            newPackages[sec.id || idx] = allItems.map(mapPkg);
+          }
         });
         setPackagesBySection(newPackages);
       } catch (err) {
@@ -133,7 +167,7 @@ export default function ContinentPackages() {
               {/* Explore More link (floats top right on desktop, centers below header on mobile) */}
               <div className="md:absolute md:top-16 md:right-0 flex justify-center mb-4 md:mb-0 z-20">
                 <Link 
-                  to={`/packages?destination=${sec.continent}`} 
+                  to={sec.type === "cruise" ? "/cruises" : "/packages"} 
                   className="flex items-center gap-1.5 text-teal-600 font-bold text-sm hover:gap-2.5 transition-all"
                 >
                   Explore More <ArrowRight className="w-4 h-4" />
@@ -191,9 +225,9 @@ export default function ContinentPackages() {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 002 2h2m-4-3h9m-9 3h9m-9 3h9m-9 3h9M3 12a9 9 0 1118 0 9 9 0 01-18 0z" />
                           </svg>
                         </div>
-                        <h3 className="font-bold text-gray-900 text-lg leading-tight">Custom {sec.continent} Trips</h3>
+                        <h3 className="font-bold text-gray-900 text-lg leading-tight">Custom {sec.title}</h3>
                         <p className="text-sm text-gray-400 leading-relaxed">
-                          We are currently curating luxury packages for {sec.continent}. Our travel experts can design a personalized journey tailored to your preferences.
+                          We are currently curating luxury packages for {sec.title}. Our travel experts can design a personalized journey tailored to your preferences.
                         </p>
                       </div>
                       <Link 
@@ -209,9 +243,13 @@ export default function ContinentPackages() {
                     ref={(el) => setRef(sec.id || idx, el)}
                     className="flex gap-6 overflow-x-auto pb-4 pt-2 snap-x snap-mandatory no-scrollbar scroll-smooth"
                   >
-                    {pkgs.map((pkg) => (
-                      <div key={pkg.id} className="w-[300px] sm:w-[340px] shrink-0 snap-start flex flex-col">
-                        <PackageCard pkg={pkg} showTag={false} showHighlights={false} />
+                    {pkgs.map((item) => (
+                      <div key={item.id} className="w-[300px] sm:w-[340px] shrink-0 snap-start flex flex-col">
+                        {item.isCruise ? (
+                          <CruiseCard cruise={item} showTag={false} showHighlights={false} />
+                        ) : (
+                          <PackageCard pkg={item} showTag={false} showHighlights={false} />
+                        )}
                       </div>
                     ))}
                   </div>

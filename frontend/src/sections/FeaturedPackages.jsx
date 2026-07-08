@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { Clock, Star, ArrowRight, MapPin } from "lucide-react";
 import { api, imageUrl } from "../api/api";
 import usePageContent from "../hooks/usePageContent";
+import { useCurrency } from "../context/CurrencyContext";
 
 
 export default function FeaturedPackages() {
@@ -21,6 +22,8 @@ export default function FeaturedPackages() {
       .then(res => setPackages(res.data ?? []))
       .catch(console.error);
   }, []);
+
+  const { formatPrice } = useCurrency();
 
   if (packages.length === 0) return null;
 
@@ -74,7 +77,7 @@ export default function FeaturedPackages() {
                   <div>
                     <div className="text-xs text-gray-400">Starting from</div>
                     <div className="text-2xl font-extrabold text-gray-900">
-                      ${Number(pkg.starting_price).toLocaleString()}<span className="text-sm font-normal text-gray-400"> / person</span>
+                      {formatPrice(pkg.starting_price ?? 0, pkg.price_aud)}<span className="text-sm font-normal text-gray-400"> / person</span>
                     </div>
                   </div>
                   <div className="flex gap-3">

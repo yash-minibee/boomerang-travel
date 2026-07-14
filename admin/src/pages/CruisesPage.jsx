@@ -88,16 +88,16 @@ export default function CruisesPage() {
           <table className="w-full">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-100">
-                {["Cruise", "Destination", "Duration", "Price", "Status", "Featured", "Actions"].map(h => (
+                {["Cruise", "Destination", "Duration", "Price", "Status", "Actions"].map(h => (
                   <th key={h} className="text-left px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
               {loading ? (
-                <tr><td colSpan={7} className="text-center py-14"><div className="w-6 h-6 border-2 border-teal-600 border-t-transparent rounded-full animate-spin mx-auto" /></td></tr>
+                <tr><td colSpan={6} className="text-center py-14"><div className="w-6 h-6 border-2 border-teal-600 border-t-transparent rounded-full animate-spin mx-auto" /></td></tr>
               ) : cruises.length === 0 ? (
-                <tr><td colSpan={7} className="text-center py-14 text-gray-400">No cruises found.</td></tr>
+                <tr><td colSpan={6} className="text-center py-14 text-gray-400">No cruises found.</td></tr>
               ) : cruises.map((cruise, i) => (
                 <motion.tr key={cruise.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4">
@@ -128,11 +128,6 @@ export default function CruisesPage() {
                   <td className="px-6 py-4 text-sm text-gray-500">{cruise.duration}</td>
                   <td className="px-6 py-4 text-sm font-bold text-gray-900">${Number(cruise.starting_price).toLocaleString()}</td>
                   <td className="px-6 py-4"><StatusBadge status={cruise.status === "active" ? "Active" : "Draft"} /></td>
-                  <td className="px-6 py-4">
-                    <button onClick={() => toggleFeatured(cruise.id)} className="text-teal-600 hover:text-amber-500 transition-colors">
-                      {Number(cruise.featured) ? <ToggleRight className="w-6 h-6" /> : <ToggleLeft className="w-6 h-6 text-gray-300" />}
-                    </button>
-                  </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
                       <Link to={`/cruises/${cruise.id}/edit`} className="w-8 h-8 flex items-center justify-center rounded-xl bg-gray-100 hover:bg-amber-50 hover:text-amber-600 transition-colors text-gray-500">

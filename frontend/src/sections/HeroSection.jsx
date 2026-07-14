@@ -22,11 +22,21 @@ export default function HeroSection() {
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       <div className="absolute inset-0">
-        <img
-          src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1920&q=80"
-          alt="Luxury tropical Maldives beach resort background with blue sky"
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
           className="w-full h-full object-cover"
-        />
+          poster="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1920&q=80"
+        >
+          <source src="/boomerang-hero-video.mp4" type="video/mp4" />
+          <img
+            src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1920&q=80"
+            alt="Luxury tropical Maldives beach resort background with blue sky"
+            className="w-full h-full object-cover"
+          />
+        </video>
         {/* Soft overlay gradient to ensure high readability of hero text and logo while maintaining turquoise water vibrance */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/30 to-black/10" />
       </div>

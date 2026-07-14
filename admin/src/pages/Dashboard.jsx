@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Package, MapPin, MessageSquare, Users, DollarSign, TrendingUp, ArrowRight, Star } from "lucide-react";
+import { Package, MapPin, MessageSquare, Users, DollarSign, TrendingUp, ArrowRight, Star, Ship, Building, Map, BedDouble } from "lucide-react";
 import { Link } from "react-router-dom";
 import StatCard from "../components/ui/StatCard";
 import StatusBadge from "../components/ui/StatusBadge";
@@ -54,13 +54,15 @@ export default function Dashboard() {
       </motion.div>
 
       {stats && (
-        <motion.div {...fadeUp(0.05)} className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
-          <StatCard title="Total Packages"     value={stats.total_packages}     icon={Package}      color="bg-gradient-to-br from-teal-500 to-teal-700" />
-          <StatCard title="Total Destinations" value={stats.total_destinations}  icon={MapPin}       color="bg-gradient-to-br from-amber-400 to-amber-600" />
-          <StatCard title="Total Inquiries"    value={stats.total_inquiries}     icon={MessageSquare} color="bg-gradient-to-br from-teal-600 to-teal-800" />
-          <StatCard title="Total Customers"    value={stats.total_customers}     icon={Users}        color="bg-gradient-to-br from-amber-500 to-amber-700" />
-          <StatCard title="New Inquiries"      value={stats.new_inquiries}       icon={DollarSign}   color="bg-gradient-to-br from-teal-700 to-teal-900" />
-          <StatCard title="Pending Reviews"    value={stats.pending_testimonials} icon={TrendingUp}  color="bg-gradient-to-br from-amber-400 to-amber-500" />
+        <motion.div {...fadeUp(0.05)} className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
+          <StatCard title="Total Packages"            value={stats.total_packages}            icon={Package}        color="bg-gradient-to-br from-teal-500 to-teal-700" />
+          <StatCard title="Total Destinations"        value={stats.total_destinations}        icon={MapPin}         color="bg-gradient-to-br from-amber-400 to-amber-600" />
+          <StatCard title="Total Hotels"              value={stats.total_hotels}              icon={Building}       color="bg-gradient-to-br from-teal-600 to-teal-800" />
+          <StatCard title="New Inquiries"             value={stats.new_inquiries}             icon={MessageSquare}  color="bg-gradient-to-br from-amber-500 to-amber-700" />
+          <StatCard title="Total Cruises"             value={stats.total_cruises}             icon={Ship}           color="bg-gradient-to-br from-teal-700 to-teal-900" />
+          <StatCard title="Total Cruise Destinations" value={stats.total_cruise_destinations} icon={Map}            color="bg-gradient-to-br from-amber-500 to-amber-700" />
+          <StatCard title="Total Cruise Cabins"       value={stats.total_cruise_cabins}       icon={BedDouble}      color="bg-gradient-to-br from-teal-500 to-teal-700" />
+          <StatCard title="Total Inquiries"           value={stats.total_inquiries}           icon={MessageSquare}  color="bg-gradient-to-br from-amber-400 to-amber-600" />
         </motion.div>
       )}
 

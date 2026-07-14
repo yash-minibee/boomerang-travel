@@ -56,11 +56,19 @@ export default function Navbar() {
     return location.pathname === path;
   };
 
+  const headerHeightClass = scrolled
+    ? "h-[74px] sm:h-[80px]"
+    : "h-[90px] sm:h-[96px]";
+
+  const logoHeightClass = scrolled
+    ? "h-[58px] sm:h-[64px]"
+    : "h-[74px] sm:h-[80px]";
+
   return (
     <>
       <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isTransparent ? "bg-transparent" : "bg-white shadow-md"}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-          <div className={`flex items-center justify-between transition-all duration-300 ${scrolled ? "h-16 lg:h-20" : "h-20 lg:h-24"}`}>
+          <div className={`flex items-center justify-between transition-all duration-300 ${headerHeightClass}`}>
 
             {/* Mobile Left Spacer (to center logo mathematically) */}
             <div className="hidden xl:hidden" />
@@ -75,7 +83,7 @@ export default function Navbar() {
                   src="/Boomerang-Logo.png"
                   alt="Boomerang Travel"
                   style={isTransparent ? { filter: "drop-shadow(0px 2px 8px rgba(255, 255, 255, 0.9)) drop-shadow(0px 1px 3px rgba(255, 255, 255, 0.9))" } : {}}
-                  className={`w-auto object-contain transition-all duration-300 ${scrolled ? "h-[48px] lg:h-[64px]" : "h-[64px] lg:h-[80px]"}`}
+                  className={`w-auto object-contain transition-all duration-300 ${logoHeightClass}`}
                 />
               </Link>
             </div>
@@ -175,13 +183,13 @@ export default function Navbar() {
             </div>
 
             {/* Mobile Top-Right: Full Currency Toggle (Click anywhere to swap) */}
-            <div className="flex xl:hidden items-center justify-end w-[80px] sm:w-[115px] ml-auto relative z-20">
+            <div className="flex xl:hidden items-center justify-end w-[90px] sm:w-[125px] ml-auto relative z-20">
               <div 
                 onClick={() => setCurrency(currency === "USD" ? "AUD" : "USD")}
-                className={`relative flex p-0.5 rounded-full border transition-all cursor-pointer select-none ${isTransparent ? "bg-white/10 border-white/25" : "bg-gray-100 border-gray-200"}`}
+                className={`relative flex p-0.5 rounded-full border transition-all cursor-pointer select-none w-full ${isTransparent ? "bg-white/10 border-white/25" : "bg-gray-100 border-gray-200"}`}
               >
                 <span
-                  className={`relative px-1 sm:px-2 py-0.5 text-[7px] xs:text-[8px] sm:text-[9.5px] font-bold rounded-full transition-colors duration-300 z-10 ${
+                  className={`relative flex-1 flex items-center justify-center py-1 text-[8.5px] xs:text-[9.5px] sm:text-[10.5px] font-bold rounded-full transition-colors duration-300 z-10 ${
                     currency === "USD"
                       ? "text-white"
                       : `${isTransparent ? "text-white/80 hover:text-white" : "text-gray-500 hover:text-gray-800"}`
@@ -197,7 +205,7 @@ export default function Navbar() {
                   USD ($)
                 </span>
                 <span
-                  className={`relative px-1 sm:px-2 py-0.5 text-[7px] xs:text-[8px] sm:text-[9.5px] font-bold rounded-full transition-colors duration-300 z-10 ${
+                  className={`relative flex-1 flex items-center justify-center py-1 text-[8.5px] xs:text-[9.5px] sm:text-[10.5px] font-bold rounded-full transition-colors duration-300 z-10 ${
                     currency === "AUD"
                       ? "text-white"
                       : `${isTransparent ? "text-white/80 hover:text-white" : "text-gray-500 hover:text-gray-800"}`

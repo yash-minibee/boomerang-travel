@@ -402,11 +402,49 @@ export default function AddCruisePage() {
         <option value="draft">Draft</option>
       </FormSelect>
 
-      <div className="sm:col-span-2">
-        <label className="text-sm font-semibold text-gray-700 block mb-1.5 flex items-center gap-2">
+      <div className="sm:col-span-2 space-y-2">
+        <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
           <Tag className="w-4 h-4 text-teal-600" /> Cruise Tags
         </label>
-        <TagInput tags={tags} onChange={setTags} placeholder="e.g. Bestseller, Romantic…" suggestions={TAG_SUGGESTIONS} />
+        <textarea
+          value={tags.join("\n")}
+          onChange={e => setTags(e.target.value.split("\n"))}
+          placeholder="Enter each tag on a new line&#10;e.g. Bestseller&#10;Romantic"
+          rows={3}
+          className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-teal-300 resize-y"
+        />
+        
+        {/* Suggestion pills */}
+        <div className="flex flex-wrap gap-2 items-center bg-gray-50 p-2.5 rounded-xl border border-gray-100">
+          <span className="text-xs text-gray-500 font-medium">Suggestions:</span>
+          {TAG_SUGGESTIONS.filter(s => !tags.includes(s)).map(s => (
+            <button
+              key={s}
+              type="button"
+              onClick={() => {
+                const current = tags.filter(t => t.trim());
+                setTags([...current, s]);
+              }}
+              className="bg-white hover:bg-teal-50 text-gray-600 hover:text-teal-700 text-[11px] font-semibold px-2.5 py-1 rounded-full border border-gray-200 hover:border-teal-200 transition-colors shadow-sm cursor-pointer"
+            >
+              + {s}
+            </button>
+          ))}
+          {TAG_SUGGESTIONS.filter(s => !tags.includes(s)).length === 0 && (
+            <span className="text-xs text-gray-400">All suggestions added</span>
+          )}
+        </div>
+
+        {/* Active Tags Preview */}
+        {tags.filter(t => t.trim()).length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {tags.filter(t => t.trim()).map((t, idx) => (
+              <span key={idx} className="inline-flex items-center gap-1 bg-teal-50 text-teal-700 text-xs font-semibold px-2.5 py-1 rounded-full border border-teal-200/60">
+                <Tag className="w-3 h-3" /> {t}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

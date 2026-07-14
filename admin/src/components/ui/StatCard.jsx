@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { TrendingUp, TrendingDown } from "lucide-react";
 
-export default function StatCard({ title, value, icon: Icon, color, growth, prefix = "", suffix = "" }) {
+export default function StatCard({ title, value = 0, icon: Icon, color, growth, prefix = "", suffix = "" }) {
   const isPositive = growth >= 0;
   return (
     <motion.div

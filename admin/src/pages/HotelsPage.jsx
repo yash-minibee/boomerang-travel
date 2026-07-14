@@ -164,14 +164,12 @@ export default function HotelsPage() {
         </div>
       )}
 
-      {totalPages > 1 && (
-        <div className="mt-6 flex justify-center">
-          <Pagination current={page} total={totalPages} onChange={setPage} />
-        </div>
-      )}
+      <div className="mt-6 flex justify-center">
+        <Pagination current={page} total={totalPages} onChange={setPage} />
+      </div>
 
       <DeleteModal
-        isOpen={deleteTarget !== null}
+        open={deleteTarget !== null}
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleDelete}
         title="Delete Hotel"

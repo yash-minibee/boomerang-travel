@@ -22,6 +22,9 @@ export default function InquiriesPage() {
   } else if (path.includes("cruise")) {
     typeFilter = "cruise";
     title = "Cruise Inquiries";
+  } else if (path.includes("mice")) {
+    typeFilter = "mice";
+    title = "MICE Inquiries";
   }
 
   const [inquiries, setInquiries] = useState([]);

@@ -62,7 +62,7 @@ const features = [
 export default function MicePage() {
   const { settings } = useSettings();
   const [destinations, setDestinations] = useState([]);
-  const [form, setForm] = useState({ name: "", email: "", phone: "", company: "", event_type: "", destination: "", attendees: "50-100", message: "" });
+  const [form, setForm] = useState({ name: "", email: "", phone: "", country: "", company: "", event_type: "", destination: "", attendees: "50-100", date: "", message: "" });
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError]         = useState("");
@@ -89,10 +89,19 @@ export default function MicePage() {
         customer_name:  form.name,
         customer_email: form.email,
         customer_phone: form.phone,
+        customer_country: form.country,
         package_name:   `MICE RFP – ${form.event_type || "Corporate"} (${form.destination || "Flexible"})`,
         travellers:     form.attendees,
         message:        `Company: ${form.company}\n\n${form.message}`,
         type:           "mice",
+        travel_date:    form.date,
+        // Extra raw fields for Google Sheets routing
+        company:        form.company,
+        event_type:     form.event_type,
+        group_size:     form.attendees,
+        expected_date:  form.date,
+        destination:    form.destination,
+        requirements:   form.message,
       });
       setSubmitted(true);
     } catch (err) {
@@ -287,6 +296,10 @@ export default function MicePage() {
                     <input required name="phone" value={form.phone} onChange={handleChange} placeholder="+91 98765 43210" className={inputClass} />
                   </div>
                   <div>
+                    <label className="text-xs font-semibold text-teal-900 block mb-1.5">Country of Residence *</label>
+                    <input required name="country" value={form.country} onChange={handleChange} placeholder="e.g. India, USA, UK" className={inputClass} />
+                  </div>
+                  <div>
                     <label className="text-xs font-semibold text-teal-900 block mb-1.5">Company Name *</label>
                     <input required name="company" value={form.company} onChange={handleChange} placeholder="Enter organization name" className={inputClass} />
                   </div>
@@ -301,19 +314,23 @@ export default function MicePage() {
                   </div>
                   <div>
                     <label className="text-xs font-semibold text-teal-900 block mb-1.5">Target Destination *</label>
-                    {destinations.length > 0 ? (
-                      <select required name="destination" value={form.destination} onChange={handleChange} className={inputClass}>
-                        <option value="">Select target destination</option>
-                        {destinations.map(d => (
-                          <option key={d.id} value={d.name}>{d.name}</option>
-                        ))}
-                        <option value="Custom / Multiple">Custom / Multiple Destinations</option>
-                      </select>
-                    ) : (
-                      <input required name="destination" value={form.destination} onChange={handleChange} placeholder="e.g. Singapore, Switzerland, Dubai..." className={inputClass} />
-                    )}
+                    <input 
+                      required 
+                      list="mice-destinations"
+                      name="destination" 
+                      value={form.destination} 
+                      onChange={handleChange} 
+                      placeholder="Type or select a destination..." 
+                      className={inputClass} 
+                    />
+                    <datalist id="mice-destinations">
+                      {destinations.map(d => (
+                        <option key={d.id} value={d.name} />
+                      ))}
+                      <option value="Custom / Multiple Destinations" />
+                    </datalist>
                   </div>
-                  <div className="sm:col-span-2">
+                  <div>
                     <label className="text-xs font-semibold text-teal-900 block mb-1.5">Expected Number of Attendees *</label>
                     <select required name="attendees" value={form.attendees} onChange={handleChange} className={inputClass}>
                       <option value="">Select size range</option>
@@ -321,6 +338,10 @@ export default function MicePage() {
                         <option key={o} value={o}>{o}</option>
                       ))}
                     </select>
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-teal-900 block mb-1.5">Expected Date *</label>
+                    <input required type="date" name="date" value={form.date} onChange={handleChange} className={inputClass} />
                   </div>
                   <div className="sm:col-span-2">
                     <label className="text-xs font-semibold text-teal-900 block mb-1.5">Detailed Requirements / Brief</label>

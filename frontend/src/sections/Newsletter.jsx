@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { Mail, ArrowRight } from "lucide-react";
+import { Mail, ArrowRight, CheckCircle } from "lucide-react";
+import { api } from "../api/api";
 import usePageContent from "../hooks/usePageContent";
 
 export default function Newsletter() {
@@ -8,6 +10,22 @@ export default function Newsletter() {
   };
 
   const { content } = usePageContent("home", defaultContent);
+  const [email, setEmail] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!email) return;
+    setSubmitting(true);
+    try {
+      await api.submitSubscriber(email);
+      setSubmitted(true);
+      setEmail("");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <section className="py-20 bg-gradient-to-br from-teal-700 via-teal-800 to-teal-950 relative overflow-hidden">
@@ -26,16 +44,25 @@ export default function Newsletter() {
           </p>
 
           <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-2 max-w-lg mx-auto">
-            <div className="flex gap-2">
-              <input
-                type="email"
-                placeholder="Enter your email address"
-                className="flex-1 bg-white rounded-2xl px-4 py-3 text-sm text-gray-800 placeholder-gray-400 outline-none"
-              />
-              <button className="bg-amber-500 hover:bg-amber-600 text-white font-bold px-5 py-3 rounded-2xl flex items-center gap-2 transition-colors">
-                Subscribe <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
+            {submitted ? (
+              <div className="flex items-center justify-center gap-2 text-white font-bold px-4 py-3">
+                <CheckCircle className="w-5 h-5 text-amber-400" /> Subscribed successfully!
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit} className="flex gap-2">
+                <input
+                  required
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Enter your email address"
+                  className="flex-1 bg-white rounded-2xl px-4 py-3 text-sm text-gray-800 placeholder-gray-400 outline-none"
+                />
+                <button type="submit" disabled={submitting} className="bg-amber-500 hover:bg-amber-600 disabled:opacity-60 text-white font-bold px-5 py-3 rounded-2xl flex items-center gap-2 transition-colors">
+                  {submitting ? "Waiting..." : "Subscribe"} {!submitting && <ArrowRight className="w-4 h-4" />}
+                </button>
+              </form>
+            )}
           </div>
 
           <p className="text-teal-300 text-xs">No spam, ever. Unsubscribe anytime. 🌍</p>

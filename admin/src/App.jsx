@@ -60,6 +60,7 @@ function AppRoutes() {
         <Route path="/inquiries" element={<InquiriesPage />} />
         <Route path="/inquiries/custom" element={<InquiriesPage />} />
         <Route path="/inquiries/cruise" element={<InquiriesPage />} />
+        <Route path="/inquiries/mice" element={<InquiriesPage />} />
         <Route path="/testimonials" element={<TestimonialsPage />} />
         <Route path="/content/home" element={<ContentPage section="home" />} />
         <Route path="/content/about" element={<ContentPage section="about" />} />

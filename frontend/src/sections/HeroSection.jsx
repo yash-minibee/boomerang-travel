@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { Search, MapPin, Calendar, Users, ChevronDown } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -6,10 +7,13 @@ import usePageContent from "../hooks/usePageContent";
 const floatingCards = [
   { icon: "🌏", label: "50+ Destinations", sub: "Across 6 continents" },
   { icon: "⭐", label: "4.9 Rating", sub: "10,000+ happy travellers" },
-  { icon: "🏅", label: "Award Winning", sub: "Best Travel Agency 2024" },
 ];
 
 export default function HeroSection() {
+  const [date, setDate] = useState("");
+  const [adults, setAdults] = useState("2");
+  const [children, setChildren] = useState("0");
+
   const defaultContent = {
     hero_title_line1: "The World Awaits",
     hero_title_line2: "Your Next Adventure",
@@ -72,32 +76,19 @@ export default function HeroSection() {
           {/* Search Box */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} className="max-w-4xl mx-auto mt-8">
             <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-3">
-              <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
-                <div className="flex items-center gap-3 bg-white rounded-2xl px-4 py-3">
-                  <MapPin className="w-5 h-5 text-amber-500 shrink-0" />
-                  <div>
-                    <div className="text-xs text-gray-400 font-medium">Destination</div>
-                    <select className="text-sm font-semibold text-gray-800 bg-transparent outline-none w-full cursor-pointer">
-                      <option>Where to?</option>
-                      <option>Europe</option>
-                      <option>Asia</option>
-                      <option>Americas</option>
-                      <option>Maldives</option>
-                    </select>
-                  </div>
-                </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 <div className="flex items-center gap-3 bg-white rounded-2xl px-4 py-3">
                   <Calendar className="w-5 h-5 text-amber-500 shrink-0" />
                   <div>
                     <div className="text-xs text-gray-400 font-medium">Travel Date</div>
-                    <input type="date" className="text-sm font-semibold text-gray-800 bg-transparent outline-none w-full" />
+                    <input type="date" value={date} onChange={e => setDate(e.target.value)} className="text-sm font-semibold text-gray-800 bg-transparent outline-none w-full" />
                   </div>
                 </div>
                 <div className="flex items-center gap-3 bg-white rounded-2xl px-4 py-3">
                   <Users className="w-5 h-5 text-amber-500 shrink-0" />
                   <div>
                     <div className="text-xs text-gray-400 font-medium">Adults</div>
-                    <select className="text-sm font-semibold text-gray-800 bg-transparent outline-none w-full cursor-pointer">
+                    <select value={adults} onChange={e => setAdults(e.target.value)} className="text-sm font-semibold text-gray-800 bg-transparent outline-none w-full cursor-pointer">
                       {[1, 2, 3, 4, 5, 6, "7+"].map(n => <option key={n} value={n}>{n} {n === 1 ? "Adult" : "Adults"}</option>)}
                     </select>
                   </div>
@@ -106,7 +97,7 @@ export default function HeroSection() {
                   <Users className="w-5 h-5 text-amber-500 shrink-0" />
                   <div>
                     <div className="text-xs text-gray-400 font-medium">Children</div>
-                    <select className="text-sm font-semibold text-gray-800 bg-transparent outline-none w-full cursor-pointer">
+                    <select value={children} onChange={e => setChildren(e.target.value)} className="text-sm font-semibold text-gray-800 bg-transparent outline-none w-full cursor-pointer">
                       {[0, 1, 2, 3, 4, 5, "6+"].map(n => <option key={n} value={n}>{n} {n === 1 ? "Child" : "Children"}</option>)}
                     </select>
                   </div>
@@ -114,14 +105,8 @@ export default function HeroSection() {
               </div>
               <div className="mt-2 flex gap-2">
                 <Link
-                  to="/packages"
-                  className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white font-bold py-3.5 rounded-2xl transition-all shadow-lg"
-                >
-                  <Search className="w-5 h-5" /> Search Packages
-                </Link>
-                <Link
-                  to="/contact"
-                  className="flex items-center justify-center gap-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold px-6 py-3.5 rounded-2xl transition-all"
+                  to={`/contact?date=${date}&travellers=${adults}&children=${children}`}
+                  className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold px-6 py-3.5 rounded-2xl transition-all shadow-lg"
                 >
                   Custom Trip
                 </Link>

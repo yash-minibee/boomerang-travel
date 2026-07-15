@@ -55,7 +55,7 @@ class CustomerModel
                 'UPDATE customers SET last_activity = CURRENT_TIMESTAMP WHERE id = ?'
             );
             $stmt->execute([$existing['id']]);
-            return $existing['id'];
+            return (int) $existing['id'];
         }
         $stmt = $this->db->prepare(
             'INSERT INTO customers (name, email, phone) VALUES (?, ?, ?)'

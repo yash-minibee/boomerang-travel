@@ -3,7 +3,6 @@ import HeroSection from "../sections/HeroSection";
 import PopularDestinations from "../sections/PopularDestinations";
 import ContinentPackages from "../sections/ContinentPackages";
 import WhyChooseUs from "../sections/WhyChooseUs";
-import Testimonials from "../sections/Testimonials";
 import Newsletter from "../sections/Newsletter";
 
 export default function HomePage() {
@@ -17,7 +16,6 @@ export default function HomePage() {
       <ContinentPackages />
       <PopularDestinations />
       <WhyChooseUs />
-      <Testimonials />
       <Newsletter />
     </main>
   );

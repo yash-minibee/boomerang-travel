@@ -4,6 +4,7 @@ import { Phone, Mail, MapPin, Clock, Send, MessageCircle, ChevronDown } from "lu
 import { api } from "../api/api";
 import usePageContent from "../hooks/usePageContent";
 import { useSettings } from "../context/SettingsContext";
+import { useLocation } from "react-router-dom";
 
 const faqs = [
   {
@@ -33,8 +34,16 @@ const faqs = [
 ];
 
 export default function ContactPage() {
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  
+  const initialDate = searchParams.get("date") || "";
+  const initialAdults = searchParams.get("travellers") || "";
+  const initialChildren = searchParams.get("children") || "0";
+  const initialDestination = searchParams.get("destination") || "";
+
   const { settings } = useSettings();
-  const [form, setForm] = useState({ name: "", country: "", email: "", phone: "", destination: "", date: "", travellers: "", children: "0", budget: "", message: "", inquiry_type: "package" });
+  const [form, setForm] = useState({ name: "", country: "", email: "", phone: "", destination: initialDestination, date: initialDate, travellers: initialAdults, children: initialChildren, budget: "", message: "", inquiry_type: "package" });
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");

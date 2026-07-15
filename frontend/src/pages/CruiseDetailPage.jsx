@@ -31,7 +31,7 @@ export default function CruiseDetailPage() {
   const [related, setRelated] = useState([]);
   const [activeImg, setActiveImg] = useState(0);
   const [activeAccordion, setActiveAccordion] = useState(null);
-  const [form, setForm] = useState({ name: "", email: "", phone: "", date: "", travellers: "2", children: "0", message: "" });
+  const [form, setForm] = useState({ name: "", email: "", phone: "", country: "", date: "", travellers: "2", children: "0", message: "" });
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -64,6 +64,7 @@ export default function CruiseDetailPage() {
         customer_name: form.name,
         customer_email: form.email,
         customer_phone: form.phone,
+        customer_country: form.country,
         travel_date: form.date,
         travellers: form.travellers,
         children: form.children,
@@ -472,7 +473,12 @@ export default function CruiseDetailPage() {
                           <input name="phone" value={form.phone} onChange={handleFormChange} placeholder="+91..."
                             className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-teal-300" />
                         </div>
-                        <div className="col-span-2">
+                        <div>
+                          <label className="text-xs text-gray-500 font-medium mb-1.5 block">Country of Residence *</label>
+                          <input required name="country" value={form.country} onChange={handleFormChange} placeholder="e.g. India"
+                            className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-teal-300" />
+                        </div>
+                        <div>
                           <label className="text-xs text-gray-500 font-medium mb-1.5 block">Travel Date</label>
                           <input type="date" name="date" value={form.date} onChange={handleFormChange}
                             className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-teal-300" />

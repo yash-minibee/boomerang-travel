@@ -50,6 +50,7 @@ const nav = [
     label: "Inquiries", icon: MessageSquare, children: [
       { label: "Package Inquiries", icon: List, path: "/inquiries" },
       { label: "Cruise Inquiries", icon: List, path: "/inquiries/cruise" },
+      { label: "MICE Inquiries", icon: List, path: "/inquiries/mice" },
       { label: "Custom Requests", icon: List, path: "/inquiries/custom" },
     ]
   },

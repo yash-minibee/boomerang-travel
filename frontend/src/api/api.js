@@ -8,6 +8,9 @@ const BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000/boomeranggl
 //       http://localhost:8000/boomerangglobaltravels-backend/uploads    (local dev)
 const UPLOADS_URL = (import.meta.env.VITE_UPLOADS_URL || 'http://localhost:8000/boomerangglobaltravels-backend/uploads').replace(/\/$/, '');
 
+// Google Apps Script Web App URL (Paste your URL here after deploying)
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxptVsHkwyWT4ziOX3iL0-7bUpoTXLq_gTY46XeqTWxeBYxtE2AEOdcw6gW9Qljdx64dg/exec" || '';
+
 /**
  * Convert any image path stored in the DB into a full URL.
  * DB may contain any of:
@@ -21,7 +24,7 @@ export function imageUrl(path) {
 
   // Pass through real external URLs (not localhost)
   if ((path.startsWith('http://') || path.startsWith('https://')) &&
-      !path.includes('localhost')) {
+    !path.includes('localhost')) {
     return path;
   }
 
@@ -53,7 +56,7 @@ async function request(method, url, data = null) {
   return json;
 }
 
-const get  = (file, params = {}) => {
+const get = (file, params = {}) => {
   const qs = new URLSearchParams(params).toString();
   return request('GET', `${BASE}/${file}${qs ? '?' + qs : ''}`);
 };
@@ -63,16 +66,84 @@ const post = (file, params, data) => {
 };
 
 export const api = {
-  getPackages:       (params = {}) => get('packages.php', params),
-  getPackage:        (slug)        => get('packages.php', { slug }),
-  getDestinations:   (params = {}) => get('destinations.php', params),
-  getCruises:            (params = {}) => get('cruises.php', params),
-  getCruise:             (slug)        => get('cruises.php', { slug }),
+  getPackages: (params = {}) => get('packages.php', params),
+  getPackage: (slug) => get('packages.php', { slug }),
+  getDestinations: (params = {}) => get('destinations.php', params),
+  getCruises: (params = {}) => get('cruises.php', params),
+  getCruise: (slug) => get('cruises.php', { slug }),
   getCruiseDestinations: (params = {}) => get('cruise_destinations.php', params),
-  getTestimonials:   ()            => get('testimonials.php'),
-  submitInquiry:     (data)        => post('inquiries.php', {}, data),
-  submitTestimonial: (data)        => post('testimonials.php', {}, data),
-  getContent:        (page)        => get('content.php', { page }),
-  getSettings:       ()            => get('settings.php'),
-  getCurrencyRate:   ()            => get('currency.php'),
+  getTestimonials: () => get('testimonials.php'),
+  submitInquiry: async (data) => {
+    const res = await post('inquiries.php', {}, data);
+
+    // Send data to Google Sheets if URL is configured
+    if (GOOGLE_SCRIPT_URL) {
+      try {
+        let type = 'inquiry';
+        if (data.type === 'custom_mice' || data.type === 'mice') type = 'mice';
+
+        // Determine inquiry source
+        let inquiryFrom = "Unknown";
+        let inquiryFor = "";
+
+        if (data.type === 'package') inquiryFrom = "Package Page";
+        else if (data.type === 'cruise') inquiryFrom = "Cruise Page";
+        else if (data.type === 'custom_package' || data.type === 'custom_cruise') {
+          inquiryFrom = "Contact Form";
+          inquiryFor = data.type === 'custom_package' ? "Holiday Tour Package" : "Cruise Trip";
+        }
+        else if (data.type === 'custom_mice' || data.type === 'mice') {
+          inquiryFrom = "MICE Page";
+        }
+
+        await fetch(GOOGLE_SCRIPT_URL, {
+          method: 'POST',
+          mode: 'no-cors', // Important for Google Apps Script
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: type,
+            inquiryFrom: inquiryFrom,
+            inquiryFor: inquiryFor,
+            name: data.customer_name || data.name,
+            email: data.customer_email || data.email,
+            phone: data.customer_phone || data.phone,
+            country: data.customer_country || data.country,
+            destination: data.package_name || data.destination,
+            date: data.travel_date || data.expected_date,
+            travellers: data.travellers || data.group_size,
+            children: data.children || '',
+            budget: data.budget_range || '',
+            message: data.message || data.requirements,
+            company: data.company || data.company_name || '',
+            event_type: data.event_type || '',
+            group_size: data.group_size || data.travellers || '',
+            expected_date: data.expected_date || data.travel_date || '',
+            requirements: data.requirements || data.message || ''
+          })
+        });
+      } catch (err) {
+        console.error("Google Sheets Error:", err);
+      }
+    }
+    return res;
+  },
+  submitSubscriber: async (email) => {
+    if (GOOGLE_SCRIPT_URL) {
+      try {
+        await fetch(GOOGLE_SCRIPT_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: 'subscriber', email })
+        });
+      } catch (err) {
+        console.error("Google Sheets Error:", err);
+      }
+    }
+    return { success: true };
+  },
+  submitTestimonial: (data) => post('testimonials.php', {}, data),
+  getContent: (page) => get('content.php', { page }),
+  getSettings: () => get('settings.php'),
+  getCurrencyRate: () => get('currency.php'),
 };

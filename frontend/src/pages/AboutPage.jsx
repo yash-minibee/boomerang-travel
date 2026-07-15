@@ -91,11 +91,6 @@ const team = [
   },
 ];
 
-const testimonials = [
-  { name: "Priya & Arjun", trip: "Maldives Honeymoon", rating: 5, quote: "Boomerang made our honeymoon absolutely magical. Every detail was perfect — from the overwater villa to the private sunset dinner." },
-  { name: "The Sharma Family", trip: "Europe Grand Tour", rating: 5, quote: "Travelling with three kids across Europe sounded daunting. Boomerang made it seamless, fun, and unforgettable." },
-  { name: "Vikram Mehta", trip: "Patagonia Trek", rating: 5, quote: "The local guides, the lodge bookings, the trail planning — everything was world-class. I'll be back for Antarctica!" },
-];
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
@@ -203,14 +198,7 @@ export default function AboutPage() {
               alt="Travel team planning"
               className="rounded-3xl w-full h-96 object-cover shadow-2xl"
             />
-            {/* Award badge */}
-            <div className="absolute -bottom-5 left-2 sm:-left-5 bg-white rounded-2xl shadow-xl p-4 flex items-center gap-3 border border-amber-100 z-10">
-              <Award className="w-9 h-9 text-amber-500 shrink-0" />
-              <div>
-                <div className="font-bold text-gray-900 text-sm">Award Winning</div>
-                <div className="text-gray-400 text-xs">Best Travel Agency 2024</div>
-              </div>
-            </div>
+
             {/* Rating badge */}
             <div className="absolute -top-5 right-2 sm:-right-5 bg-teal-700 rounded-2xl shadow-xl p-4 text-white text-center z-10">
               <div className="flex justify-center gap-0.5 mb-1">
@@ -271,6 +259,7 @@ export default function AboutPage() {
       </section>
 
       {/* ── Meet the Team ─────────────────────────────────────────────── */}
+      {/* 
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
         <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center mb-12">
           <span className="text-amber-600 font-semibold text-sm tracking-widest uppercase">The Dreamers</span>
@@ -296,36 +285,7 @@ export default function AboutPage() {
           ))}
         </div>
       </section>
-
-      {/* ── Testimonials ─────────────────────────────────────────────── */}
-      <section className="bg-amber-50 py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center mb-12">
-            <span className="text-amber-600 font-semibold text-sm tracking-widest uppercase">Traveller Love</span>
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mt-2">What Our Guests Say</h2>
-          </motion.div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {testimonials.map((t, i) => (
-              <motion.div key={i} initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }} transition={{ delay: i * 0.1 }}
-                className="bg-white rounded-3xl p-6 shadow-sm border border-amber-100">
-                <div className="flex gap-0.5 mb-4">
-                  {[...Array(t.rating)].map((_, si) => (
-                    <Star key={si} className="w-4 h-4 fill-amber-400 text-amber-400" />
-                  ))}
-                </div>
-                <p className="text-gray-600 text-sm leading-relaxed italic mb-5">"{t.quote}"</p>
-                <div>
-                  <div className="font-bold text-gray-900">{t.name}</div>
-                  <div className="text-teal-600 text-xs font-medium flex items-center gap-1 mt-0.5">
-                    <MapPin className="w-3 h-3" /> {t.trip}
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
+      */}
 
       {/* ── CTA ──────────────────────────────────────────────────────── */}
       <section className="bg-gradient-to-br from-teal-800 to-teal-950 py-20">
